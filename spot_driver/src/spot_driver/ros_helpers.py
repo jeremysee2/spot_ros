@@ -23,8 +23,8 @@ from spot_msgs.msg import SystemFault, SystemFaultState
 from spot_msgs.msg import BatteryState, BatteryStateArray
 from spot_msgs.msg import DockState
 
-from bosdyn.api import image_pb2
-from bosdyn.api import robot_state_pb2
+from bosdyn.api import image_pb2, robot_state_pb2
+from bosdyn.api.docking import docking_pb2
 from bosdyn.client.math_helpers import SE3Pose
 from bosdyn.client.frame_helpers import get_odom_tform_body, get_vision_tform_body
 
@@ -416,7 +416,7 @@ def GetWifiFromState(
     return wifi_msg
 
 
-def GenerateFeetTf(
+def GenerateFeetTF(
     foot_states_msg: FootStateArray
 ) -> TFMessage:
     """
@@ -452,7 +452,7 @@ def GetTFFromState(
     state: robot_state_pb2.RobotState,
     spot_wrapper: SpotWrapper,
     inverse_target_frame: str
-):
+) -> TFMessage:
     """Maps robot link state data from robot state proto to ROS TFMessage message
 
     Args:
@@ -505,7 +505,7 @@ def GetTFFromState(
 def GetBatteryStatesFromState(
     state: robot_state_pb2.RobotState,
     spot_wrapper: SpotWrapper
-):
+) -> BatteryStateArray:
     """Maps battery state data from robot state proto to ROS BatteryStateArray message
 
     Args:
@@ -536,9 +536,9 @@ def GetBatteryStatesFromState(
 
 
 def GetPowerStatesFromState(
-    state:robot_state_pb2,
+    state: robot_state_pb2.RobotState,
     spot_wrapper: SpotWrapper
-):
+) -> PowerState:
     """Maps power state data from robot state proto to ROS PowerState message
 
     Args:
@@ -563,8 +563,8 @@ def GetPowerStatesFromState(
 
 
 def GetDockStatesFromState(
-    state: robot_state_pb2.RobotState
-):
+    state: docking_pb2.DockState
+) -> DockState:
     """Maps dock state data from robot state proto to ROS DockState message
 
     Args:
@@ -580,10 +580,10 @@ def GetDockStatesFromState(
     return dock_state_msg
 
 
-def getBehaviorFaults(
-    behavior_faults: robot_state_pb2.BehaviorFaultState,
+def GetBehaviorFaults(
+    behavior_faults: typing.List[robot_state_pb2.BehaviorFault],
     spot_wrapper: SpotWrapper
-):
+) -> typing.List[BehaviorFault]:
     """Helper function to strip out behavior faults into a list
 
     Args:
@@ -606,10 +606,29 @@ def getBehaviorFaults(
     return faults
 
 
-def getSystemFaults(
-    system_faults: robot_state_pb2.SystemFaultState,
+def GetBehaviorFaultsFromState(
+    state: robot_state_pb2.RobotState,
     spot_wrapper: SpotWrapper
-):
+) -> BehaviorFaultState:
+    """Maps behavior fault data from robot state proto to ROS BehaviorFaultState message
+
+    Args:
+        data: Robot State proto
+        spot_wrapper: A SpotWrapper object
+    Returns:
+        BehaviorFaultState message
+    """
+    behavior_fault_state_msg = BehaviorFaultState()
+    behavior_fault_state_msg.faults = GetBehaviorFaults(
+        state.behavior_fault_state.faults, spot_wrapper
+    )
+    return behavior_fault_state_msg
+
+
+def GetSystemFaults(
+    system_faults: typing.List[robot_state_pb2.SystemFault],
+    spot_wrapper: SpotWrapper
+) -> typing.List[SystemFault]:
     """Helper function to strip out system faults into a list
 
     Args:
@@ -642,7 +661,7 @@ def getSystemFaults(
 def GetSystemFaultsFromState(
     state: robot_state_pb2.RobotState,
     spot_wrapper: SpotWrapper
-):
+) -> SystemFaultState:
     """Maps system fault data from robot state proto to ROS SystemFaultState message
 
     Args:
@@ -652,29 +671,10 @@ def GetSystemFaultsFromState(
         SystemFaultState message
     """
     system_fault_state_msg = SystemFaultState()
-    system_fault_state_msg.faults = getSystemFaults(
+    system_fault_state_msg.faults = GetSystemFaults(
         state.system_fault_state.faults, spot_wrapper
     )
-    system_fault_state_msg.historical_faults = getSystemFaults(
+    system_fault_state_msg.historical_faults = GetSystemFaults(
         state.system_fault_state.historical_faults, spot_wrapper
     )
     return system_fault_state_msg
-
-
-def getBehaviorFaultsFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
-):
-    """Maps behavior fault data from robot state proto to ROS BehaviorFaultState message
-
-    Args:
-        data: Robot State proto
-        spot_wrapper: A SpotWrapper object
-    Returns:
-        BehaviorFaultState message
-    """
-    behavior_fault_state_msg = BehaviorFaultState()
-    behavior_fault_state_msg.faults = getBehaviorFaults(
-        state.behavior_fault_state.faults, spot_wrapper
-    )
-    return behavior_fault_state_msg

@@ -139,7 +139,7 @@ class SpotROS:
 
             # Feet #
             foot_array_msg = GetFeetFromState(state, self.spot_wrapper)
-            self.tf_pub.publish(GenerateFeetTf(foot_array_msg))
+            self.tf_pub.publish(GenerateFeetTF(foot_array_msg))
             self.feet_pub.publish(foot_array_msg)
 
             # EStop #
@@ -169,7 +169,7 @@ class SpotROS:
             self.system_faults_pub.publish(system_fault_state_msg)
 
             # Behavior Faults #
-            behavior_fault_state_msg = getBehaviorFaultsFromState(
+            behavior_fault_state_msg = GetBehaviorFaultsFromState(
                 state, self.spot_wrapper
             )
             self.behavior_faults_pub.publish(behavior_fault_state_msg)
