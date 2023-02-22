@@ -26,12 +26,6 @@ from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
 from bosdyn.client.image import ImageClient, build_image_request
 from bosdyn.client.docking import DockingClient, blocking_dock_robot, blocking_undock
 from bosdyn.client.time_sync import TimeSyncEndpoint, TimeSyncClient
-from bosdyn.api import estop_pb2, image_pb2, robot_state_pb2, lease_pb2
-from bosdyn.api.graph_nav import graph_nav_pb2
-from bosdyn.api.graph_nav import map_pb2
-from bosdyn.api.graph_nav import nav_pb2
-from bosdyn.api.spot import robot_command_pb2 as spot_command_pb2
-from bosdyn.api.docking import docking_pb2
 from bosdyn.client.estop import EstopClient, EstopEndpoint, EstopKeepAlive
 from bosdyn.client import power
 from bosdyn.client import frame_helpers
@@ -41,6 +35,13 @@ from bosdyn.client.exceptions import InternalServerError
 
 from . import graph_nav_util
 
+from bosdyn.api import robot_command_pb2
+from bosdyn.api import estop_pb2, image_pb2, robot_state_pb2, lease_pb2
+from bosdyn.api.graph_nav import graph_nav_pb2
+from bosdyn.api.graph_nav import map_pb2
+from bosdyn.api.graph_nav import nav_pb2
+from bosdyn.api.spot import robot_command_pb2 as spot_command_pb2
+from bosdyn.api.docking import docking_pb2
 from bosdyn.api import arm_command_pb2
 import bosdyn.api.robot_state_pb2 as robot_state_proto
 from bosdyn.api import basic_command_pb2
@@ -649,7 +650,7 @@ class SpotWrapper:
         return self._robot_state_task.proto
 
     @property
-    def metrics(self) -> robot_state_pb2.Metrics:
+    def metrics(self) -> robot_state_pb2.RobotMetrics:
         """Return latest proto from the _robot_metrics_task"""
         return self._robot_metrics_task.proto
 
@@ -1118,7 +1119,7 @@ class SpotWrapper:
 
         if not self._is_standing:
             robot_command.blocking_stand(
-                command_client=self._robot_command_client, timeout_sec=10.0
+                command_client=self._robot_command_client, timeout_sec=10
             )
             self._logger.info("Spot is standing")
         else:
@@ -1278,7 +1279,7 @@ class SpotWrapper:
                     cmd_id
                 )
                 joint_move_feedback = (
-                    feedback_resp.feedback.synchronized_feedback.arm_command_feedback.arm_joint_move_feedback
+                    feedback_resp.feedback.synchronized_feedback.arm_command_feedback.arm_joint_move_feedback #type: ignore
                 )
                 time_to_goal: Duration = joint_move_feedback.time_to_goal
                 time_to_goal_in_seconds: float = time_to_goal.seconds + (
@@ -1292,8 +1293,9 @@ class SpotWrapper:
 
     def force_trajectory(
         self,
-        data: typing.List[typing.List[float]]
+        data
     ) -> typing.Tuple[bool, str]:
+        #TODO: Work in progress
         try:
             success, msg = self.ensure_arm_power_and_stand()
             if not success:

@@ -309,10 +309,10 @@ class TestGetTFFromState(unittest.TestCase):
 
         # Test with vision frame transformation
         # Add mock edges to relate the body, odom and vision frames. Body is the root frame.
-        vision_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=2, y=3, z=2),
-                                                    rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
         body_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=-2, y=-3, z=-2),
                                                   rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
+        vision_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=2, y=3, z=2),
+                                                    rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
         none_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=0, y=0, z=0),
                                                   rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
         edges = {}
@@ -326,16 +326,16 @@ class TestGetTFFromState(unittest.TestCase):
 
         self.assertEquals(len(tf_message.transforms), 2)
         self.assertEquals(tf_message.transforms[0].header.frame_id, "body")
-        self.assertEquals(tf_message.transforms[0].child_frame_id, "vision")
-        self.assertEquals(tf_message.transforms[0].transform.translation.x, 2.0)
-        self.assertEquals(tf_message.transforms[0].transform.translation.y, 3.0)
-        self.assertEquals(tf_message.transforms[0].transform.translation.z, 2.0)
+        self.assertEquals(tf_message.transforms[0].child_frame_id, "odom")
+        self.assertEquals(tf_message.transforms[0].transform.translation.x, -2.0)
+        self.assertEquals(tf_message.transforms[0].transform.translation.y, -3.0)
+        self.assertEquals(tf_message.transforms[0].transform.translation.z, -2.0)
 
         self.assertEquals(tf_message.transforms[1].header.frame_id, "body")
-        self.assertEquals(tf_message.transforms[1].child_frame_id, "odom")
-        self.assertEquals(tf_message.transforms[1].transform.translation.x, -2.0)
-        self.assertEquals(tf_message.transforms[1].transform.translation.y, -3.0)
-        self.assertEquals(tf_message.transforms[1].transform.translation.z, -2.0)
+        self.assertEquals(tf_message.transforms[1].child_frame_id, "vision")
+        self.assertEquals(tf_message.transforms[1].transform.translation.x, 2.0)
+        self.assertEquals(tf_message.transforms[1].transform.translation.y, 3.0)
+        self.assertEquals(tf_message.transforms[1].transform.translation.z, 2.0)
 
 
     def test_get_tf_from_state_vision(self):
@@ -345,10 +345,10 @@ class TestGetTFFromState(unittest.TestCase):
 
         # Test with vision frame transformation
         # Add mock edges to relate the body, odom and vision frames. Body is the root frame.
-        vision_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=4, y=5, z=6),
-                                                    rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
         body_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=-2, y=-3, z=-4),
                                                   rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
+        vision_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=4, y=5, z=6),
+                                                    rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
         special_tform_example = geometry_pb2.SE3Pose(position=geometry_pb2.Vec3(x=7, y=8, z=9),
                                                      rotation=geometry_pb2.Quaternion(x=0, y=0, z=0, w=1))
         edges = {}
@@ -361,23 +361,23 @@ class TestGetTFFromState(unittest.TestCase):
         tf_message = ros_helpers.GetTFFromState(state, spot_wrapper, inverse_target_frame)
         self.assertEquals(len(tf_message.transforms), 3)
 
-        self.assertEquals(tf_message.transforms[0].header.frame_id, "vision")
-        self.assertEquals(tf_message.transforms[0].child_frame_id, "body")
-        self.assertEquals(tf_message.transforms[0].transform.translation.x, -4.0)
-        self.assertEquals(tf_message.transforms[0].transform.translation.y, -5.0)
-        self.assertEquals(tf_message.transforms[0].transform.translation.z, -6.0)
+        self.assertEquals(tf_message.transforms[0].header.frame_id, "body")
+        self.assertEquals(tf_message.transforms[0].child_frame_id, "odom")
+        self.assertEquals(tf_message.transforms[0].transform.translation.x, -2.0)
+        self.assertEquals(tf_message.transforms[0].transform.translation.y, -3.0)
+        self.assertEquals(tf_message.transforms[0].transform.translation.z, -4.0)
 
-        self.assertEquals(tf_message.transforms[1].header.frame_id, "special_frame")
+        self.assertEquals(tf_message.transforms[1].header.frame_id, "vision")
         self.assertEquals(tf_message.transforms[1].child_frame_id, "body")
-        self.assertEquals(tf_message.transforms[1].transform.translation.x, 7.0)
-        self.assertEquals(tf_message.transforms[1].transform.translation.y, 8.0)
-        self.assertEquals(tf_message.transforms[1].transform.translation.z, 9.0)
+        self.assertEquals(tf_message.transforms[1].transform.translation.x, -4.0)
+        self.assertEquals(tf_message.transforms[1].transform.translation.y, -5.0)
+        self.assertEquals(tf_message.transforms[1].transform.translation.z, -6.0)
 
-        self.assertEquals(tf_message.transforms[2].header.frame_id, "body")
-        self.assertEquals(tf_message.transforms[2].child_frame_id, "odom")
-        self.assertEquals(tf_message.transforms[2].transform.translation.x, -2.0)
-        self.assertEquals(tf_message.transforms[2].transform.translation.y, -3.0)
-        self.assertEquals(tf_message.transforms[2].transform.translation.z, -4.0)
+        self.assertEquals(tf_message.transforms[2].header.frame_id, "special_frame")
+        self.assertEquals(tf_message.transforms[2].child_frame_id, "body")
+        self.assertEquals(tf_message.transforms[2].transform.translation.x, 7.0)
+        self.assertEquals(tf_message.transforms[2].transform.translation.y, 8.0)
+        self.assertEquals(tf_message.transforms[2].transform.translation.z, 9.0)
 
 class TestGetBatteryStatesFromState(unittest.TestCase):
     def test_get_battery_states_from_state_zero(self):
