@@ -17,6 +17,8 @@ from bosdyn.api import geometry_pb2
 from bosdyn.api import trajectory_pb2
 from google.protobuf.duration_pb2 import Duration
 
+from geometry_msgs.msg import Pose
+
 class SpotArm():
     def __init__(
         self,
@@ -150,7 +152,7 @@ class SpotArm():
 
     def arm_joint_move(
         self,
-        joint_targets: typing.List[float]
+        joint_targets
     ) -> typing.Tuple[bool, str]:
         # All perspectives are given when looking at the robot from behind after the unstow service is called
         # Joint1: 0.0 arm points to the front. positive: turn left, negative: turn right)
@@ -394,7 +396,7 @@ class SpotArm():
 
     def hand_pose(
         self,
-        pose_points: geometry_pb2.SE3Pose
+        pose_points: Pose
     ) -> typing.Tuple[bool, str]:
         try:
             success, msg = self.ensure_arm_power_and_stand()

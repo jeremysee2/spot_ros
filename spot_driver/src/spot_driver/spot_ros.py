@@ -102,7 +102,7 @@ class SpotROS:
     """Parent class for using the wrapper.  Defines all callbacks and keeps the wrapper alive"""
 
     def __init__(self):
-        self.spot_wrapper = None
+        # self.spot_wrapper = None
 
         self.callbacks = {}
         """Dictionary listing what callback to use for what data task"""
@@ -1166,47 +1166,47 @@ class SpotROS:
     # Arm functions ##################################################
     def handle_arm_stow(self, srv_data):
         """ROS service handler to command the arm to stow, home position"""
-        resp = self.spot_wrapper.arm_stow()
+        resp = self.spot_wrapper.spot_arm.arm_stow()
         return TriggerResponse(resp[0], resp[1])
 
     def handle_arm_unstow(self, srv_data):
         """ROS service handler to command the arm to unstow, joints are all zeros"""
-        resp = self.spot_wrapper.arm_unstow()
+        resp = self.spot_wrapper.spot_arm.arm_unstow()
         return TriggerResponse(resp[0], resp[1])
 
     def handle_arm_joint_move(self, srv_data: ArmJointMovementRequest):
         """ROS service handler to send joint movement to the arm to execute"""
-        resp = self.spot_wrapper.arm_joint_move(joint_targets=srv_data.joint_target)
+        resp = self.spot_wrapper.spot_arm.arm_joint_move(joint_targets=srv_data.joint_target)
         return ArmJointMovementResponse(resp[0], resp[1])
 
     def handle_force_trajectory(self, srv_data):
         """ROS service handler to send a force trajectory up or down a vertical force"""
-        resp = self.spot_wrapper.force_trajectory(data=srv_data)
+        resp = self.spot_wrapper.spot_arm.force_trajectory(data=srv_data)
         return ArmForceTrajectoryResponse(resp[0], resp[1])
 
     def handle_gripper_open(self, srv_data):
         """ROS service handler to open the gripper"""
-        resp = self.spot_wrapper.gripper_open()
+        resp = self.spot_wrapper.spot_arm.gripper_open()
         return TriggerResponse(resp[0], resp[1])
 
     def handle_gripper_close(self, srv_data):
         """ROS service handler to close the gripper"""
-        resp = self.spot_wrapper.gripper_close()
+        resp = self.spot_wrapper.spot_arm.gripper_close()
         return TriggerResponse(resp[0], resp[1])
 
     def handle_gripper_angle_open(self, srv_data: GripperAngleMoveRequest):
         """ROS service handler to open the gripper at an angle"""
-        resp = self.spot_wrapper.gripper_angle_open(gripper_ang=srv_data.gripper_angle)
+        resp = self.spot_wrapper.spot_arm.gripper_angle_open(gripper_ang=srv_data.gripper_angle)
         return GripperAngleMoveResponse(resp[0], resp[1])
 
     def handle_arm_carry(self, srv_data):
         """ROS service handler to put arm in carry mode"""
-        resp = self.spot_wrapper.arm_carry()
+        resp = self.spot_wrapper.spot_arm.arm_carry()
         return TriggerResponse(resp[0], resp[1])
 
     def handle_hand_pose(self, srv_data: HandPoseRequest):
         """ROS service to give a position to the gripper"""
-        resp = self.spot_wrapper.hand_pose(pose_points=srv_data.pose_point)
+        resp = self.spot_wrapper.spot_arm.hand_pose(pose_points=srv_data.pose_point)
         return HandPoseResponse(resp[0], resp[1])
 
     ##################################################################

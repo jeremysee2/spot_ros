@@ -651,6 +651,14 @@ class SpotWrapper:
             self._lease = None
 
     @property
+    def spot_arm(self) -> SpotArm:
+        """Return SpotArm instance"""
+        if not self._robot.has_arm():
+            raise Exception("SpotArm is not available on this robot")
+        else:
+            return self._spot_arm
+
+    @property
     def logger(self) -> logging.Logger:
         """Return logger instance of the SpotWrapper"""
         return self._logger
@@ -1121,57 +1129,6 @@ class SpotWrapper:
         resp = self._navigate_to([navigate_to])
 
         return resp
-
-    # Arm ############################################
-    def ensure_arm_power_and_stand(self) -> typing.Tuple[bool, str]:
-        return self._spot_arm.ensure_arm_power_and_stand()
-
-    def arm_stow(self) -> typing.Tuple[bool, str]:
-        return self._spot_arm.arm_stow()
-
-    def arm_unstow(self) -> typing.Tuple[bool, str]:
-        return self._spot_arm.arm_unstow()
-
-    def arm_carry(self) -> typing.Tuple[bool, str]:
-        return self._spot_arm.arm_carry()
-
-    def make_arm_trajectory_command(
-        self,
-        arm_joint_trajectory: arm_command_pb2.ArmJointTrajectory
-    ) -> robot_command_pb2.RobotCommand:
-        return self._spot_arm.make_arm_trajectory_command(arm_joint_trajectory)
-
-    def arm_joint_move(
-        self,
-        joint_targets: typing.List[float]
-        ) -> typing.Tuple[bool, str]:
-        return self._spot_arm.arm_joint_move(joint_targets)
-
-    def force_trajectory(
-        self,
-        data
-    ) -> typing.Tuple[bool, str]:
-        return self._spot_arm.force_trajectory(data)
-
-    def gripper_open(self) -> typing.Tuple[bool, str]:
-        return self._spot_arm.gripper_open()
-
-    def gripper_close(self) -> typing.Tuple[bool, str]:
-        return self._spot_arm.gripper_close()
-
-    def gripper_angle_open(
-        self,
-        gripper_ang: float
-    ) -> typing.Tuple[bool, str]:
-        return self._spot_arm.gripper_angle_open(gripper_ang)
-
-    def hand_pose(
-        self,
-        pose_points: geometry_pb2.SE3Pose
-    ) -> typing.Tuple[bool, str]:
-        return self._spot_arm.hand_pose(pose_points)
-
-    ###################################################################
 
     ## copy from spot-sdk/python/examples/graph_nav_command_line/graph_nav_command_line.py
     def _get_localization_state(self, *args):
