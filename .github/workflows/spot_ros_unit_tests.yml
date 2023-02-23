@@ -33,7 +33,8 @@ jobs:
           sudo apt-get update && \
           sudo apt-get install -y \
             python3-pip \
-            ros-noetic-tf2-bullet
+            ros-noetic-tf2-bullet \
+            qttools5-dev
           pip install cython \
             bosdyn-client \
             bosdyn-mission \
