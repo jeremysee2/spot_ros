@@ -220,7 +220,7 @@ class SpotROS:
         lease_array_msg = LeaseArray()
         lease_list = self.spot_wrapper.lease
         if lease_list:
-            for resource in lease_list.resources:  # TODO: confirm that this is working
+            for resource in lease_list: # type: ignore
                 new_resource = LeaseResource()
                 new_resource.resource = resource.resource
                 new_resource.lease.resource = resource.lease.resource

@@ -675,13 +675,9 @@ class SpotWrapper:
         return self._valid
 
     @property
-    def id(self) -> robot_id_pb2.RobotId:
-        """Return robot's ID"""
-        if self._robot_params["robot_id"] is None:
-            raise Exception(
-                "Robot ID is not available yet, not yet connected.")
-        else:
-            return self._robot_params["robot_id"]
+    def id(self) -> typing.Optional[robot_id_pb2.RobotId]:
+        """Return robot's ID. Note that it may return None when the robot is still initializing"""
+        return self._robot_params["robot_id"]
 
     @property
     def robot_state(self) -> robot_state_pb2.RobotState:
