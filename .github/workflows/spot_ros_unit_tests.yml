@@ -28,13 +28,12 @@ jobs:
           path: catkin_ws/src
 
       # Install the Turtlebot and Gazebo packages
-      - name: Install dependencies
+      - name: Install dependencies (minus qttools)
         run: |
           sudo apt-get update && \
           sudo apt-get install -y \
             python3-pip \
-            ros-noetic-tf2-bullet \
-            qttools5-dev
+            ros-noetic-tf2-bullet
           pip install cython \
             bosdyn-client \
             bosdyn-mission \
@@ -44,12 +43,12 @@ jobs:
         working-directory: catkin_ws/
 
       # Build our workspace
-      - name: Build workspace
+      - name: Build workspace for spot_driver
         run: |
           source /opt/ros/noetic/setup.bash
           rosdep update
           rosdep install --from-paths src --ignore-src -y
-          catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release
+          catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release --only-pkg-with-deps spot_driver
         working-directory: catkin_ws/
 
       # Run our ROS test!
