@@ -53,7 +53,8 @@ jobs:
           source /opt/ros/noetic/setup.bash
           rosdep update
           rosdep install --from-paths src --ignore-src -y
-          catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release --only-pkg-with-deps spot_driver
+          ls $GITHUB_WORKSPACE/catkin_ws
+          catkin_make --only-pkg-with-deps spot_driver
         working-directory: catkin_ws/
 
       # Run our ROS test!
