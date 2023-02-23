@@ -25,7 +25,7 @@ jobs:
       # Check out the code
       - uses: actions/checkout@v2
         with:
-          path: catkin_ws/src
+          path: catkin_ws/src/spot_ros
 
       - name: Check that code has been downloade correctly
         run: |
