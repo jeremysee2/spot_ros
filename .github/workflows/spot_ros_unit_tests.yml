@@ -29,8 +29,8 @@ jobs:
 
       - name: Check that code has been downloade correctly
         run: |
-        ls $GITHUB_WORKSPACE/catkin_ws/src
-        ls $GITHUB_WORKSPACE/catkin_ws/src/spot_ros
+          ls $GITHUB_WORKSPACE/catkin_ws/src
+          ls $GITHUB_WORKSPACE/catkin_ws/src/spot_ros
 
       # Install the Turtlebot and Gazebo packages
       - name: Install dependencies (minus qttools)
