@@ -27,7 +27,7 @@ jobs:
         with:
           path: catkin_ws/src/spot_ros
 
-      - name: Check that code has been downloade correctly
+      - name: Check that code has been downloaded correctly
         run: |
           ls $GITHUB_WORKSPACE/catkin_ws/src
           ls $GITHUB_WORKSPACE/catkin_ws/src/spot_ros
