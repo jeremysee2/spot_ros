@@ -20,13 +20,13 @@ from google.protobuf.duration_pb2 import Duration
 from geometry_msgs.msg import Pose
 
 
-class SpotArm():
+class SpotArm:
     def __init__(
         self,
         robot: Robot,
         logger: logging.Logger,
         robot_params: typing.Dict[str, typing.Any],
-        robot_clients: typing.Dict[str, typing.Any]
+        robot_clients: typing.Dict[str, typing.Any],
     ):
         """
         Constructor for SpotArm class.
@@ -41,16 +41,17 @@ class SpotArm():
         self._robot = robot
         self._logger = logger
         self._robot_params = robot_params
-        self._robot_command_client: RobotCommandClient = robot_clients['robot_command_client']
-        self._robot_command: typing.Callable = robot_clients['robot_command_method']
+        self._robot_command_client: RobotCommandClient = robot_clients[
+            "robot_command_client"
+        ]
+        self._robot_command: typing.Callable = robot_clients["robot_command_method"]
 
     def ensure_arm_power_and_stand(self) -> typing.Tuple[bool, str]:
         if not self._robot.has_arm():
             return False, "Spot with an arm is required for this service"
 
         try:
-            self._logger.info(
-                "Spot is powering on within the timeout of 20 secs")
+            self._logger.info("Spot is powering on within the timeout of 20 secs")
             self._robot.power_on(timeout_sec=20)
             assert self._robot.is_powered_on(), "Spot failed to power on"
             self._logger.info("Spot is powered on")
@@ -60,7 +61,7 @@ class SpotArm():
                 "Exception occured while Spot or its arm were trying to power on",
             )
 
-        if not self._robot_params['is_standing']:
+        if not self._robot_params["is_standing"]:
             robot_command.blocking_stand(
                 command_client=self._robot_command_client, timeout_sec=10
             )
@@ -131,8 +132,7 @@ class SpotArm():
         return True, "Carry mode success"
 
     def make_arm_trajectory_command(
-        self,
-        arm_joint_trajectory: arm_command_pb2.ArmJointTrajectory
+        self, arm_joint_trajectory: arm_command_pb2.ArmJointTrajectory
     ) -> robot_command_pb2.RobotCommand:
         """Helper function to create a RobotCommand from an ArmJointTrajectory.
         Copy from 'spot-sdk/python/examples/arm_joint_move/arm_joint_move.py'"""
@@ -151,10 +151,7 @@ class SpotArm():
         )
         return RobotCommandBuilder.build_synchro_command(arm_sync_robot_cmd)
 
-    def arm_joint_move(
-        self,
-        joint_targets
-    ) -> typing.Tuple[bool, str]:
+    def arm_joint_move(self, joint_targets) -> typing.Tuple[bool, str]:
         # All perspectives are given when looking at the robot from behind after the unstow service is called
         # Joint1: 0.0 arm points to the front. positive: turn left, negative: turn right)
         # RANGE: -3.14 -> 3.14
@@ -212,8 +209,7 @@ class SpotArm():
                 arm_joint_trajectory = arm_command_pb2.ArmJointTrajectory(
                     points=[trajectory_point]
                 )
-                arm_command = self.make_arm_trajectory_command(
-                    arm_joint_trajectory)
+                arm_command = self.make_arm_trajectory_command(arm_joint_trajectory)
 
                 # Send the request
                 cmd_id = self._robot_command_client.robot_command(arm_command)
@@ -235,10 +231,7 @@ class SpotArm():
         except Exception as e:
             return False, "Exception occured during arm movement: " + str(e)
 
-    def force_trajectory(
-        self,
-        data
-    ) -> typing.Tuple[bool, str]:
+    def force_trajectory(self, data) -> typing.Tuple[bool, str]:
         # TODO: Work in progress
         try:
             success, msg = self.ensure_arm_power_and_stand()
@@ -259,26 +252,22 @@ class SpotArm():
                 # 10 seconds
 
                 def create_wrench_from_msg(forces, torques):
-                    force = geometry_pb2.Vec3(
-                        x=forces[0], y=forces[1], z=forces[2])
-                    torque = geometry_pb2.Vec3(
-                        x=torques[0], y=torques[1], z=torques[2])
+                    force = geometry_pb2.Vec3(x=forces[0], y=forces[1], z=forces[2])
+                    torque = geometry_pb2.Vec3(x=torques[0], y=torques[1], z=torques[2])
                     return geometry_pb2.Wrench(force=force, torque=torque)
 
                 # Duration in seconds.
                 traj_duration = 5
 
                 # first point on trajectory
-                wrench0 = create_wrench_from_msg(
-                    data.forces_pt0, data.torques_pt0)
+                wrench0 = create_wrench_from_msg(data.forces_pt0, data.torques_pt0)
                 t0 = seconds_to_duration(0)
                 traj_point0 = trajectory_pb2.WrenchTrajectoryPoint(
                     wrench=wrench0, time_since_reference=t0
                 )
 
                 # Second point on the trajectory
-                wrench1 = create_wrench_from_msg(
-                    data.forces_pt1, data.torques_pt1)
+                wrench1 = create_wrench_from_msg(data.forces_pt1, data.torques_pt1)
                 t1 = seconds_to_duration(traj_duration)
                 traj_point1 = trajectory_pb2.WrenchTrajectoryPoint(
                     wrench=wrench1, time_since_reference=t1
@@ -303,10 +292,8 @@ class SpotArm():
                 arm_command = arm_command_pb2.ArmCommand.Request(  # type: ignore
                     arm_cartesian_command=arm_cartesian_command
                 )
-                synchronized_command = (
-                    synchronized_command_pb2.SynchronizedCommand.Request(  # type: ignore
-                        arm_command=arm_command
-                    )
+                synchronized_command = synchronized_command_pb2.SynchronizedCommand.Request(  # type: ignore
+                    arm_command=arm_command
                 )
                 robot_command = robot_command_pb2.RobotCommand(
                     synchronized_command=synchronized_command
@@ -363,10 +350,7 @@ class SpotArm():
 
         return True, "Closed gripper successfully"
 
-    def gripper_angle_open(
-        self,
-        gripper_ang: float
-    ) -> typing.Tuple[bool, str]:
+    def gripper_angle_open(self, gripper_ang: float) -> typing.Tuple[bool, str]:
         # takes an angle between 0 (closed) and 90 (fully opened) and opens the
         # gripper at this angle
         if gripper_ang > 90 or gripper_ang < 0:
@@ -382,8 +366,7 @@ class SpotArm():
                 closed = 0.349066
                 opened = -1.396263
                 angle = gripper_ang / 90.0 * (opened - closed) + closed
-                command = RobotCommandBuilder.claw_gripper_open_angle_command(
-                    angle)
+                command = RobotCommandBuilder.claw_gripper_open_angle_command(angle)
 
                 # Command issue with RobotCommandClient
                 self._robot_command_client.robot_command(command)
@@ -395,10 +378,7 @@ class SpotArm():
 
         return True, "Opened gripper successfully"
 
-    def hand_pose(
-        self,
-        pose_points: Pose
-    ) -> typing.Tuple[bool, str]:
+    def hand_pose(self, pose_points: Pose) -> typing.Tuple[bool, str]:
         try:
             success, msg = self.ensure_arm_power_and_stand()
             if not success:
@@ -425,8 +405,7 @@ class SpotArm():
                 duration = seconds_to_duration(seconds)
 
                 # Build the SE(3) pose of the desired hand position in the moving body frame.
-                hand_pose = geometry_pb2.SE3Pose(
-                    position=position, rotation=rotation)
+                hand_pose = geometry_pb2.SE3Pose(position=position, rotation=rotation)
                 hand_pose_traj_point = trajectory_pb2.SE3TrajectoryPoint(
                     pose=hand_pose, time_since_reference=duration
                 )
@@ -441,10 +420,8 @@ class SpotArm():
                 arm_command = arm_command_pb2.ArmCommand.Request(  # type: ignore
                     arm_cartesian_command=arm_cartesian_command
                 )
-                synchronized_command = (
-                    synchronized_command_pb2.SynchronizedCommand.Request(  # type: ignore
-                        arm_command=arm_command
-                    )
+                synchronized_command = synchronized_command_pb2.SynchronizedCommand.Request(  # type: ignore
+                    arm_command=arm_command
                 )
 
                 # robot_command = self._robot_command(RobotCommandBuilder.build_synchro_command(synchronized_command))

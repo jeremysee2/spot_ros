@@ -7,19 +7,20 @@ from bosdyn.client.docking import DockingClient, blocking_dock_robot, blocking_u
 from bosdyn.api.docking import docking_pb2
 
 
-class SpotDocking():
+class SpotDocking:
     def __init__(
         self,
         robot: Robot,
         logger: logging.Logger,
         robot_params: typing.Dict[str, typing.Any],
-        robot_clients: typing.Dict[str, typing.Any]
+        robot_clients: typing.Dict[str, typing.Any],
     ):
         self._robot = robot
         self._logger = logger
         self._docking_client: DockingClient = robot_clients["docking_client"]
         self._robot_command_client: robot_command.RobotCommandClient = robot_clients[
-            "robot_command_client"]
+            "robot_command_client"
+        ]
         self._robot_params = robot_params
 
     def dock(self, dock_id: int) -> typing.Tuple[bool, str]:

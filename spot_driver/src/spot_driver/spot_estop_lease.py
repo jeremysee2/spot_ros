@@ -9,13 +9,14 @@ from bosdyn.client import ResponseError, RpcError
 from bosdyn.client.estop import EstopEndpoint, EstopKeepAlive, EstopClient
 from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
 
-class SpotEstopLease():
+
+class SpotEstopLease:
     def __init__(
         self,
         robot: Robot,
         logger: logging.Logger,
         robot_params: typing.Dict[str, typing.Any],
-        robot_clients: typing.Dict[str, typing.Any]
+        robot_clients: typing.Dict[str, typing.Any],
     ):
         """
         Initialize the SpotEstopLease class
@@ -28,7 +29,6 @@ class SpotEstopLease():
         self._robot_params = robot_params
         self._estop_keepalive = None
 
-
     def claim(self) -> typing.Tuple[bool, str]:
         """Get a lease for the robot, a handle on the estop endpoint, and the ID of the robot."""
         try:
@@ -39,7 +39,6 @@ class SpotEstopLease():
         except (ResponseError, RpcError) as err:
             self._logger.error("Failed to initialize robot communication: %s", err)
             return False, str(err)
-
 
     def resetEStop(self):
         """Get keepalive for eStop"""
@@ -57,9 +56,9 @@ class SpotEstopLease():
         """
         try:
             if severe:
-                self._estop_keepalive.stop() # type: ignore
+                self._estop_keepalive.stop()  # type: ignore
             else:
-                self._estop_keepalive.settle_then_cut() # type: ignore
+                self._estop_keepalive.settle_then_cut()  # type: ignore
 
             return True, "Success, E-Stop engaged"
         except:
@@ -68,7 +67,7 @@ class SpotEstopLease():
     def disengageEStop(self) -> typing.Tuple[bool, str]:
         """Disengages the E-Stop"""
         try:
-            self._estop_keepalive.allow() # type: ignore
+            self._estop_keepalive.allow()  # type: ignore
             return True, "Success, E-Stop disengaged"
         except:
             return False, "Error, E-Stop already released"

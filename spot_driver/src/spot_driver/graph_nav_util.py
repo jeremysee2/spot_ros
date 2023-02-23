@@ -24,7 +24,7 @@ def pretty_print_waypoints(
     waypoint_name: str,
     short_code_to_count: typing.Dict[str, int],
     localization_id: str,
-    logger: logging.Logger
+    logger: logging.Logger,
 ):
     short_code = id_to_short_code(waypoint_id)
     if short_code is None or short_code_to_count[short_code] != 1:
@@ -46,7 +46,7 @@ def find_unique_waypoint_id(
     short_code: str,
     graph: map_pb2.Graph,
     name_to_id: typing.Dict[str, str],
-    logger: logging.Logger
+    logger: logging.Logger,
 ):
     """Convert either a 2 letter short code or an annotation name into the associated unique id."""
     if len(short_code) != 2:
@@ -76,9 +76,7 @@ def find_unique_waypoint_id(
 
 
 def update_waypoints_and_edges(
-    graph: map_pb2.Graph,
-    localization_id: str,
-    logger: logging.Logger
+    graph: map_pb2.Graph, localization_id: str, logger: logging.Logger
 ) -> typing.Tuple[typing.Dict[str, str], typing.Dict[str, str]]:
     """Update and print waypoint ids and edge ids."""
     name_to_id = dict()
@@ -122,8 +120,7 @@ def update_waypoints_and_edges(
 
     # Sort the set of waypoints by their creation timestamp. If the creation timestamp is unavailable,
     # fallback to sorting by annotation name.
-    waypoint_to_timestamp = sorted(
-        waypoint_to_timestamp, key=lambda x: (x[1], x[2]))
+    waypoint_to_timestamp = sorted(waypoint_to_timestamp, key=lambda x: (x[1], x[2]))
 
     # Print out the waypoints name, id, and short code in a ordered sorted by the timestamp from
     # when the waypoint was created.

@@ -35,7 +35,12 @@ from spot_msgs.msg import PoseBodyAction, PoseBodyGoal, PoseBodyResult
 from spot_msgs.msg import Feedback
 from spot_msgs.msg import MobilityParams, ObstacleParams, TerrainParams
 from spot_msgs.msg import NavigateToAction, NavigateToResult, NavigateToFeedback
-from spot_msgs.msg import TrajectoryAction, TrajectoryResult, TrajectoryFeedback, TrajectoryGoal
+from spot_msgs.msg import (
+    TrajectoryAction,
+    TrajectoryResult,
+    TrajectoryFeedback,
+    TrajectoryGoal,
+)
 from spot_msgs.srv import ListGraph, ListGraphResponse
 from spot_msgs.srv import SetLocomotion, SetLocomotionResponse
 from spot_msgs.srv import SetTerrainParams, SetTerrainParamsResponse
@@ -76,11 +81,7 @@ class RateLimitedCall:
     Wrap a function with this class to limit how frequently it can be called within a loop
     """
 
-    def __init__(
-        self,
-        fn: typing.Callable,
-        rate_limit: float
-    ):
+    def __init__(self, fn: typing.Callable, rate_limit: float):
         """
 
         Args:
@@ -125,8 +126,7 @@ class SpotROS:
             self.joint_state_pub.publish(joint_state)
 
             ## TF ##
-            tf_msg = GetTFFromState(
-                state, self.spot_wrapper, self.mode_parent_odom_tf)
+            tf_msg = GetTFFromState(state, self.spot_wrapper, self.mode_parent_odom_tf)
             if len(tf_msg.transforms) > 0:
                 self.tf_pub.publish(tf_msg)
 
@@ -136,11 +136,9 @@ class SpotROS:
 
             # Odom #
             if self.mode_parent_odom_tf == "vision":
-                odom_msg = GetOdomFromState(
-                    state, self.spot_wrapper, use_vision=True)
+                odom_msg = GetOdomFromState(state, self.spot_wrapper, use_vision=True)
             else:
-                odom_msg = GetOdomFromState(
-                    state, self.spot_wrapper, use_vision=False)
+                odom_msg = GetOdomFromState(state, self.spot_wrapper, use_vision=False)
             self.odom_pub.publish(odom_msg)
 
             # Feet #
@@ -171,8 +169,7 @@ class SpotROS:
             self.power_pub.publish(power_state_msg)
 
             # System Faults #
-            system_fault_state_msg = GetSystemFaultsFromState(
-                state, self.spot_wrapper)
+            system_fault_state_msg = GetSystemFaultsFromState(state, self.spot_wrapper)
             self.system_faults_pub.publish(system_fault_state_msg)
 
             # Behavior Faults #
@@ -191,9 +188,9 @@ class SpotROS:
         if metrics:
             metrics_msg = Metrics()
             local_time = self.spot_wrapper.robotToLocalTime(
-                metrics.timestamp)  # type: ignore
-            metrics_msg.header.stamp = rospy.Time(
-                local_time.seconds, local_time.nanos)
+                metrics.timestamp
+            )  # type: ignore
+            metrics_msg.header.stamp = rospy.Time(local_time.seconds, local_time.nanos)
 
             for metric in metrics.metrics:  # type: ignore
                 if metric.label == "distance":
@@ -220,7 +217,7 @@ class SpotROS:
         lease_array_msg = LeaseArray()
         lease_list = self.spot_wrapper.lease
         if lease_list:
-            for resource in lease_list: # type: ignore
+            for resource in lease_list:  # type: ignore
                 new_resource = LeaseResource()
                 new_resource.resource = resource.resource
                 new_resource.lease.resource = resource.lease.resource
@@ -244,20 +241,16 @@ class SpotROS:
         """
         data = self.spot_wrapper.front_images
         if data:
-            image_msg0, camera_info_msg0 = getImageMsg(
-                data[0], self.spot_wrapper)
+            image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
             self.frontleft_image_pub.publish(image_msg0)
             self.frontleft_image_info_pub.publish(camera_info_msg0)
-            image_msg1, camera_info_msg1 = getImageMsg(
-                data[1], self.spot_wrapper)
+            image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
             self.frontright_image_pub.publish(image_msg1)
             self.frontright_image_info_pub.publish(camera_info_msg1)
-            image_msg2, camera_info_msg2 = getImageMsg(
-                data[2], self.spot_wrapper)
+            image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
             self.frontleft_depth_pub.publish(image_msg2)
             self.frontleft_depth_info_pub.publish(camera_info_msg2)
-            image_msg3, camera_info_msg3 = getImageMsg(
-                data[3], self.spot_wrapper)
+            image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
             self.frontright_depth_pub.publish(image_msg3)
             self.frontright_depth_info_pub.publish(camera_info_msg3)
 
@@ -274,20 +267,16 @@ class SpotROS:
         """
         data = self.spot_wrapper.side_images
         if data:
-            image_msg0, camera_info_msg0 = getImageMsg(
-                data[0], self.spot_wrapper)
+            image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
             self.left_image_pub.publish(image_msg0)
             self.left_image_info_pub.publish(camera_info_msg0)
-            image_msg1, camera_info_msg1 = getImageMsg(
-                data[1], self.spot_wrapper)
+            image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
             self.right_image_pub.publish(image_msg1)
             self.right_image_info_pub.publish(camera_info_msg1)
-            image_msg2, camera_info_msg2 = getImageMsg(
-                data[2], self.spot_wrapper)
+            image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
             self.left_depth_pub.publish(image_msg2)
             self.left_depth_info_pub.publish(camera_info_msg2)
-            image_msg3, camera_info_msg3 = getImageMsg(
-                data[3], self.spot_wrapper)
+            image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
             self.right_depth_pub.publish(image_msg3)
             self.right_depth_info_pub.publish(camera_info_msg3)
 
@@ -304,12 +293,10 @@ class SpotROS:
         """
         data = self.spot_wrapper.rear_images
         if data:
-            mage_msg0, camera_info_msg0 = getImageMsg(
-                data[0], self.spot_wrapper)
+            mage_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
             self.back_image_pub.publish(mage_msg0)
             self.back_image_info_pub.publish(camera_info_msg0)
-            mage_msg1, camera_info_msg1 = getImageMsg(
-                data[1], self.spot_wrapper)
+            mage_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
             self.back_depth_pub.publish(mage_msg1)
             self.back_depth_info_pub.publish(camera_info_msg1)
 
@@ -324,20 +311,16 @@ class SpotROS:
         """
         data = self.spot_wrapper.hand_images
         if data:
-            mage_msg0, camera_info_msg0 = getImageMsg(
-                data[0], self.spot_wrapper)
+            mage_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
             self.hand_image_mono_pub.publish(mage_msg0)
             self.hand_image_mono_info_pub.publish(camera_info_msg0)
-            mage_msg1, camera_info_msg1 = getImageMsg(
-                data[1], self.spot_wrapper)
+            mage_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
             self.hand_depth_pub.publish(mage_msg1)
             self.hand_depth_info_pub.publish(camera_info_msg1)
-            image_msg2, camera_info_msg2 = getImageMsg(
-                data[2], self.spot_wrapper)
+            image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
             self.hand_image_color_pub.publish(image_msg2)
             self.hand_image_color_info_pub.publish(camera_info_msg2)
-            image_msg3, camera_info_msg3 = getImageMsg(
-                data[3], self.spot_wrapper)
+            image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
             self.hand_depth_in_hand_color_pub.publish(image_msg3)
             self.hand_depth_in_color_info_pub.publish(camera_info_msg3)
 
@@ -438,11 +421,7 @@ class SpotROS:
             self.body_pose_as.set_aborted(result)
 
     def _posed_stand(
-        self,
-        body_height: float,
-        yaw: float,
-        pitch: float,
-        roll: float
+        self, body_height: float, yaw: float, pitch: float, roll: float
     ) -> typing.Tuple[bool, str]:
         """
         Make the robot do a posed stand with specified body height and orientation
@@ -509,7 +488,9 @@ class SpotROS:
             mobility_params = self.spot_wrapper.get_mobility_params()
             mobility_params.stair_hint = req.data  # type: ignore
             self.spot_wrapper.set_mobility_params(mobility_params)
-            return SetBoolResponse(True, "Success, stair mode set to {}".format(req.data))
+            return SetBoolResponse(
+                True, "Success, stair mode set to {}".format(req.data)
+            )
         except Exception as e:
             return SetBoolResponse(False, "Error:{}".format(e))
 
@@ -525,7 +506,9 @@ class SpotROS:
             mobility_params = self.spot_wrapper.get_mobility_params()
             mobility_params.locomotion_hint = req.locomotion_mode  # type: ignore
             self.spot_wrapper.set_mobility_params(mobility_params)
-            return SetLocomotionResponse(True, "Success, locomotion mode set to {}".format(req.locomotion_mode))
+            return SetLocomotionResponse(
+                True, "Success, locomotion mode set to {}".format(req.locomotion_mode)
+            )
         except Exception as e:
             return SetLocomotionResponse(False, "Error:{}".format(e))
 
@@ -541,7 +524,9 @@ class SpotROS:
             mobility_params = self.spot_wrapper.get_mobility_params()
             mobility_params.swing_height = req.swing_height  # type: ignore
             self.spot_wrapper.set_mobility_params(mobility_params)
-            return SetSwingHeightResponse(True, "Success, step swing height set to {}".format(req.swing_height))
+            return SetSwingHeightResponse(
+                True, "Success, step swing height set to {}".format(req.swing_height)
+            )
         except Exception as e:
             return SetSwingHeightResponse(False, "Error:{}".format(e))
 
@@ -562,10 +547,7 @@ class SpotROS:
         return SetVelocityResponse(success, message)
 
     def set_velocity_limits(
-        self,
-        max_linear_x: float,
-        max_linear_y: float,
-        max_angular_z: float
+        self, max_linear_x: float, max_linear_y: float, max_angular_z: float
     ) -> typing.Tuple[bool, str]:
         """
         Modify the mobility params to have a limit on the robot's velocity during trajectory commands.
@@ -582,8 +564,7 @@ class SpotROS:
 
         """
         if any(
-            map(lambda x: 0 < x < 0.15, [
-                max_linear_x, max_linear_y, max_angular_z])
+            map(lambda x: 0 < x < 0.15, [max_linear_x, max_linear_y, max_angular_z])
         ):
             return (
                 False,
@@ -738,8 +719,7 @@ class SpotROS:
             req.obstacle_params.obstacle_avoidance_padding
         )
 
-        mobility_params.obstacle_params.CopyFrom(
-            obstacle_params)  # type: ignore
+        mobility_params.obstacle_params.CopyFrom(obstacle_params)  # type: ignore
         self.spot_wrapper.set_mobility_params(mobility_params)
         return True, "Successfully set obstacle params" + disable_notallowed
 
@@ -761,8 +741,7 @@ class SpotROS:
             # For some reason assignment to ground_mu_hint is not allowed once the terrain params are initialised
             # Must initialise with the protobuf type DoubleValue for initialisation to work
             terrain_params = spot_command_pb2.TerrainParams(
-                ground_mu_hint=DoubleValue(
-                    value=req.terrain_params.ground_mu_hint)
+                ground_mu_hint=DoubleValue(value=req.terrain_params.ground_mu_hint)
             )
         else:
             return (
@@ -825,14 +804,12 @@ class SpotROS:
 
         target_pose = req.target_pose
         if req.target_pose.header.frame_id != "body":
-            rospy.logwarn(
-                "Pose given was not in the body frame, will transform")
+            rospy.logwarn("Pose given was not in the body frame, will transform")
             try:
                 target_pose = self._transform_pose_to_body_frame(target_pose)
             except tf2_ros.LookupException as e:
                 self.trajectory_server.set_aborted(
-                    TrajectoryResult(
-                        False, "Could not transform pose into body frame")
+                    TrajectoryResult(False, "Could not transform pose into body frame")
                 )
                 return
         if req.duration.data.to_sec() <= 0:
@@ -841,8 +818,7 @@ class SpotROS:
             )
             return
 
-        cmd_duration = rospy.Duration(
-            req.duration.data.secs, req.duration.data.nsecs)
+        cmd_duration = rospy.Duration(req.duration.data.secs, req.duration.data.nsecs)
         resp = self._send_trajectory_command(
             target_pose, cmd_duration, req.precise_positioning
         )
@@ -897,8 +873,7 @@ class SpotROS:
             if self.spot_wrapper.near_goal:
                 if self.spot_wrapper._last_trajectory_command_precise:
                     self.trajectory_server.publish_feedback(
-                        TrajectoryFeedback(
-                            "Near goal, performing final adjustments")
+                        TrajectoryFeedback("Near goal, performing final adjustments")
                     )
                 else:
                     self.trajectory_server.publish_feedback(
@@ -914,8 +889,7 @@ class SpotROS:
         if self.trajectory_server.is_active():
             cmd_timeout.shutdown()
             if self.trajectory_server.is_preempt_requested():
-                self.trajectory_server.publish_feedback(
-                    TrajectoryFeedback("Preempted"))
+                self.trajectory_server.publish_feedback(TrajectoryFeedback("Preempted"))
                 self.trajectory_server.set_preempted()
                 self.spot_wrapper.stop()
 
@@ -923,8 +897,7 @@ class SpotROS:
                 self.trajectory_server.publish_feedback(
                     TrajectoryFeedback("Reached goal")
                 )
-                self.trajectory_server.set_succeeded(
-                    TrajectoryResult(resp[0], resp[1]))
+                self.trajectory_server.set_succeeded(TrajectoryResult(resp[0], resp[1]))
             else:
                 self.trajectory_server.publish_feedback(
                     TrajectoryFeedback("Failed to reach goal")
@@ -974,8 +947,7 @@ class SpotROS:
 
         """
         if not self.robot_allowed_to_move():
-            rospy.logerr(
-                "send trajectory was called but motion is not allowed.")
+            rospy.logerr("send trajectory was called but motion is not allowed.")
             return
 
         if pose.header.frame_id != "body":
@@ -998,12 +970,10 @@ class SpotROS:
     def cmdVelCallback(self, data):
         """Callback for cmd_vel command"""
         if not self.robot_allowed_to_move():
-            rospy.logerr(
-                "cmd_vel received a message but motion is not allowed.")
+            rospy.logerr("cmd_vel received a message but motion is not allowed.")
             return
 
-        self.spot_wrapper.velocity_cmd(
-            data.linear.x, data.linear.y, data.angular.z)
+        self.spot_wrapper.velocity_cmd(data.linear.x, data.linear.y, data.angular.z)
 
     def in_motion_or_idle_pose_cb(self, data):
         """
@@ -1014,8 +984,7 @@ class SpotROS:
         stand command.
         """
         if not self.robot_allowed_to_move(autonomous_command=False):
-            rospy.logerr(
-                "body pose received a message but motion is not allowed.")
+            rospy.logerr("body pose received a message but motion is not allowed.")
             return
 
         self._set_in_motion_or_idle_body_pose(data)
@@ -1032,8 +1001,7 @@ class SpotROS:
         """
         # We can change the body pose if autonomy is not allowed
         if not self.robot_allowed_to_move(autonomous_command=False):
-            rospy.logerr(
-                "body pose actionserver was called but motion is not allowed.")
+            rospy.logerr("body pose actionserver was called but motion is not allowed.")
             return
 
         # If the body_pose is empty, we use the rpy + height components instead
@@ -1091,8 +1059,7 @@ class SpotROS:
         pose = geometry_pb2.SE3Pose(position=position, rotation=q)
         point = trajectory_pb2.SE3TrajectoryPoint(pose=pose)
         traj = trajectory_pb2.SE3Trajectory(points=[point])
-        body_control = spot_command_pb2.BodyControlParams(
-            base_offset_rt_footprint=traj)
+        body_control = spot_command_pb2.BodyControlParams(base_offset_rt_footprint=traj)
 
         mobility_params = self.spot_wrapper.get_mobility_params()
         mobility_params.body_control.CopyFrom(body_control)  # type: ignore
@@ -1111,16 +1078,14 @@ class SpotROS:
             )
             if localization_state.localization.waypoint_id:
                 self.navigate_as.publish_feedback(
-                    NavigateToFeedback(
-                        localization_state.localization.waypoint_id)
+                    NavigateToFeedback(localization_state.localization.waypoint_id)
                 )
             rospy.Rate(10).sleep()
 
     def handle_navigate_to(self, msg):
         """ROS service handler to run mission of the robot.  The robot will replay a mission"""
         if not self.robot_allowed_to_move():
-            rospy.logerr(
-                "navigate_to was requested but robot is not allowed to move.")
+            rospy.logerr("navigate_to was requested but robot is not allowed to move.")
             self.navigate_as.set_aborted(
                 NavigateToResult(False, "Autonomy is not enabled")
             )
@@ -1218,7 +1183,8 @@ class SpotROS:
     def handle_arm_joint_move(self, srv_data: ArmJointMovementRequest):
         """ROS service handler to send joint movement to the arm to execute"""
         resp = self.spot_wrapper.spot_arm.arm_joint_move(
-            joint_targets=srv_data.joint_target)
+            joint_targets=srv_data.joint_target
+        )
         return ArmJointMovementResponse(resp[0], resp[1])
 
     def handle_force_trajectory(self, srv_data):
@@ -1239,7 +1205,8 @@ class SpotROS:
     def handle_gripper_angle_open(self, srv_data: GripperAngleMoveRequest):
         """ROS service handler to open the gripper at an angle"""
         resp = self.spot_wrapper.spot_arm.gripper_angle_open(
-            gripper_ang=srv_data.gripper_angle)
+            gripper_ang=srv_data.gripper_angle
+        )
         return GripperAngleMoveResponse(resp[0], resp[1])
 
     def handle_arm_carry(self, srv_data):
@@ -1249,8 +1216,7 @@ class SpotROS:
 
     def handle_hand_pose(self, srv_data: HandPoseRequest):
         """ROS service to give a position to the gripper"""
-        resp = self.spot_wrapper.spot_arm.hand_pose(
-            pose_points=srv_data.pose_point)
+        resp = self.spot_wrapper.spot_arm.hand_pose(pose_points=srv_data.pose_point)
         return HandPoseResponse(resp[0], resp[1])
 
     ##################################################################
@@ -1265,41 +1231,27 @@ class SpotROS:
         mobility_params_msg = MobilityParams()
         try:
             mobility_params = self.spot_wrapper.get_mobility_params()
-            mobility_params_msg.body_control.position.x = (
-                mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                    0
-                ].pose.position.x
-            )
-            mobility_params_msg.body_control.position.y = (
-                mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                    0
-                ].pose.position.y
-            )
-            mobility_params_msg.body_control.position.z = (
-                mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                    0
-                ].pose.position.z
-            )
-            mobility_params_msg.body_control.orientation.x = (
-                mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                    0
-                ].pose.rotation.x
-            )
-            mobility_params_msg.body_control.orientation.y = (
-                mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                    0
-                ].pose.rotation.y
-            )
-            mobility_params_msg.body_control.orientation.z = (
-                mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                    0
-                ].pose.rotation.z
-            )
-            mobility_params_msg.body_control.orientation.w = (
-                mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                    0
-                ].pose.rotation.w
-            )
+            mobility_params_msg.body_control.position.x = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
+                0
+            ].pose.position.x
+            mobility_params_msg.body_control.position.y = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
+                0
+            ].pose.position.y
+            mobility_params_msg.body_control.position.z = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
+                0
+            ].pose.position.z
+            mobility_params_msg.body_control.orientation.x = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
+                0
+            ].pose.rotation.x
+            mobility_params_msg.body_control.orientation.y = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
+                0
+            ].pose.rotation.y
+            mobility_params_msg.body_control.orientation.z = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
+                0
+            ].pose.rotation.z
+            mobility_params_msg.body_control.orientation.w = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
+                0
+            ].pose.rotation.w
             mobility_params_msg.locomotion_hint = mobility_params.locomotion_hint  # type: ignore
             mobility_params_msg.stair_hint = mobility_params.stair_hint  # type: ignore
             mobility_params_msg.swing_height = mobility_params.swing_height  # type: ignore
@@ -1416,11 +1368,9 @@ class SpotROS:
         self.mode_parent_odom_tf = rospy.get_param(
             "~mode_parent_odom_tf", "odom"
         )  # 'vision' or 'odom'
-        self.tf_name_kinematic_odom = rospy.get_param(
-            "~tf_name_kinematic_odom", "odom")
+        self.tf_name_kinematic_odom = rospy.get_param("~tf_name_kinematic_odom", "odom")
         self.tf_name_raw_kinematic = "odom"
-        self.tf_name_vision_odom = rospy.get_param(
-            "~tf_name_vision_odom", "vision")
+        self.tf_name_vision_odom = rospy.get_param("~tf_name_vision_odom", "vision")
         self.tf_name_raw_vision = "vision"
         if (
             self.mode_parent_odom_tf != self.tf_name_raw_kinematic
@@ -1448,16 +1398,14 @@ class SpotROS:
             return
 
         # Images #
-        self.back_image_pub = rospy.Publisher(
-            "camera/back/image", Image, queue_size=10)
+        self.back_image_pub = rospy.Publisher("camera/back/image", Image, queue_size=10)
         self.frontleft_image_pub = rospy.Publisher(
             "camera/frontleft/image", Image, queue_size=10
         )
         self.frontright_image_pub = rospy.Publisher(
             "camera/frontright/image", Image, queue_size=10
         )
-        self.left_image_pub = rospy.Publisher(
-            "camera/left/image", Image, queue_size=10)
+        self.left_image_pub = rospy.Publisher("camera/left/image", Image, queue_size=10)
         self.right_image_pub = rospy.Publisher(
             "camera/right/image", Image, queue_size=10
         )
@@ -1469,21 +1417,18 @@ class SpotROS:
         )
 
         # Depth #
-        self.back_depth_pub = rospy.Publisher(
-            "depth/back/image", Image, queue_size=10)
+        self.back_depth_pub = rospy.Publisher("depth/back/image", Image, queue_size=10)
         self.frontleft_depth_pub = rospy.Publisher(
             "depth/frontleft/image", Image, queue_size=10
         )
         self.frontright_depth_pub = rospy.Publisher(
             "depth/frontright/image", Image, queue_size=10
         )
-        self.left_depth_pub = rospy.Publisher(
-            "depth/left/image", Image, queue_size=10)
+        self.left_depth_pub = rospy.Publisher("depth/left/image", Image, queue_size=10)
         self.right_depth_pub = rospy.Publisher(
             "depth/right/image", Image, queue_size=10
         )
-        self.hand_depth_pub = rospy.Publisher(
-            "depth/hand/image", Image, queue_size=10)
+        self.hand_depth_pub = rospy.Publisher("depth/hand/image", Image, queue_size=10)
         self.hand_depth_in_hand_color_pub = rospy.Publisher(
             "depth/hand/depth_in_color", Image, queue_size=10
         )
@@ -1552,20 +1497,15 @@ class SpotROS:
         )
         """Defining a TF publisher manually because of conflicts between Python3 and tf"""
         self.tf_pub = rospy.Publisher("tf", TFMessage, queue_size=10)
-        self.metrics_pub = rospy.Publisher(
-            "status/metrics", Metrics, queue_size=10)
-        self.lease_pub = rospy.Publisher(
-            "status/leases", LeaseArray, queue_size=10)
+        self.metrics_pub = rospy.Publisher("status/metrics", Metrics, queue_size=10)
+        self.lease_pub = rospy.Publisher("status/leases", LeaseArray, queue_size=10)
         self.odom_twist_pub = rospy.Publisher(
             "odometry/twist", TwistWithCovarianceStamped, queue_size=10
         )
         self.odom_pub = rospy.Publisher("odometry", Odometry, queue_size=10)
-        self.feet_pub = rospy.Publisher(
-            "status/feet", FootStateArray, queue_size=10)
-        self.estop_pub = rospy.Publisher(
-            "status/estop", EStopStateArray, queue_size=10)
-        self.wifi_pub = rospy.Publisher(
-            "status/wifi", WiFiState, queue_size=10)
+        self.feet_pub = rospy.Publisher("status/feet", FootStateArray, queue_size=10)
+        self.estop_pub = rospy.Publisher("status/estop", EStopStateArray, queue_size=10)
+        self.wifi_pub = rospy.Publisher("status/wifi", WiFiState, queue_size=10)
         self.power_pub = rospy.Publisher(
             "status/power_state", PowerState, queue_size=10
         )
@@ -1582,8 +1522,7 @@ class SpotROS:
             "status/motion_allowed", Bool, queue_size=10
         )
 
-        self.feedback_pub = rospy.Publisher(
-            "status/feedback", Feedback, queue_size=10)
+        self.feedback_pub = rospy.Publisher("status/feedback", Feedback, queue_size=10)
 
         self.mobility_params_pub = rospy.Publisher(
             "status/mobility_params", MobilityParams, queue_size=10
@@ -1614,17 +1553,14 @@ class SpotROS:
         rospy.Service("allow_motion", SetBool, self.handle_allow_motion)
 
         rospy.Service("stair_mode", SetBool, self.handle_stair_mode)
-        rospy.Service("locomotion_mode", SetLocomotion,
-                      self.handle_locomotion_mode)
+        rospy.Service("locomotion_mode", SetLocomotion, self.handle_locomotion_mode)
         rospy.Service("swing_height", SetSwingHeight, self.handle_swing_height)
         rospy.Service("velocity_limit", SetVelocity, self.handle_vel_limit)
         rospy.Service(
             "clear_behavior_fault", ClearBehaviorFault, self.handle_clear_behavior_fault
         )
-        rospy.Service("terrain_params", SetTerrainParams,
-                      self.handle_terrain_params)
-        rospy.Service("obstacle_params", SetObstacleParams,
-                      self.handle_obstacle_params)
+        rospy.Service("terrain_params", SetTerrainParams, self.handle_terrain_params)
+        rospy.Service("obstacle_params", SetObstacleParams, self.handle_obstacle_params)
         rospy.Service("posed_stand", PosedStand, self.handle_posed_stand)
 
         rospy.Service("list_graph", ListGraph, self.handle_list_graph)
@@ -1634,8 +1570,7 @@ class SpotROS:
         # Docking
         rospy.Service("dock", Dock, self.handle_dock)
         rospy.Service("undock", Trigger, self.handle_undock)
-        rospy.Service("docking_state", GetDockState,
-                      self.handle_get_docking_state)
+        rospy.Service("docking_state", GetDockState, self.handle_get_docking_state)
         # Arm Services #########################################
         rospy.Service("arm_stow", Trigger, self.handle_arm_stow)
         rospy.Service("arm_unstow", Trigger, self.handle_arm_unstow)
@@ -1645,8 +1580,7 @@ class SpotROS:
         rospy.Service(
             "gripper_angle_open", GripperAngleMove, self.handle_gripper_angle_open
         )
-        rospy.Service("arm_joint_move", ArmJointMovement,
-                      self.handle_arm_joint_move)
+        rospy.Service("arm_joint_move", ArmJointMovement, self.handle_arm_joint_move)
         rospy.Service(
             "force_trajectory", ArmForceTrajectory, self.handle_force_trajectory
         )
@@ -1714,8 +1648,7 @@ class SpotROS:
         rate_limited_mobility_params = RateLimitedCall(
             self.publish_mobility_params, self.rates["mobility_params"]
         )
-        rate_limited_motion_allowed = RateLimitedCall(
-            self.publish_allow_motion, 10)
+        rate_limited_motion_allowed = RateLimitedCall(self.publish_allow_motion, 10)
         rospy.loginfo("Driver started")
         while not rospy.is_shutdown():
             self.spot_wrapper.updateTasks()

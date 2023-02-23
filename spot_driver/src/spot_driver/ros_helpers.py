@@ -95,10 +95,7 @@ class DefaultCameraInfo(CameraInfo):
 
 
 def populateTransformStamped(
-    time: rospy.Time,
-    parent_frame: str,
-    child_frame: str,
-    transform: Transform
+    time: rospy.Time, parent_frame: str, child_frame: str, transform: Transform
 ) -> TransformStamped:
     """Populates a TransformStamped message
 
@@ -138,8 +135,7 @@ def populateTransformStamped(
 
 
 def getImageMsg(
-    data: image_pb2.ImageResponse,
-    spot_wrapper: SpotWrapper
+    data: image_pb2.ImageResponse, spot_wrapper: SpotWrapper
 ) -> typing.Tuple[Image, CameraInfo]:
     """Takes the image and camera data and populates the necessary ROS messages
 
@@ -217,8 +213,7 @@ def getImageMsg(
 
 
 def GetJointStatesFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ):
     """Maps joint state data from robot state proto to ROS JointState message
 
@@ -247,8 +242,7 @@ def GetJointStatesFromState(
 
 
 def GetEStopStateFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> EStopStateArray:
     """Maps eStop state data from robot state proto to ROS EStopArray message
 
@@ -273,8 +267,7 @@ def GetEStopStateFromState(
 
 
 def GetFeetFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> FootStateArray:
     """Maps foot position state data from robot state proto to ROS FootStateArray message
 
@@ -318,8 +311,7 @@ def GetFeetFromState(
 
 
 def GetOdomTwistFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> TwistWithCovarianceStamped:
     """Maps odometry data from robot state proto to ROS TwistWithCovarianceStamped message
 
@@ -356,9 +348,7 @@ def GetOdomTwistFromState(
 
 
 def GetOdomFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper,
-    use_vision=True
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper, use_vision=True
 ):
     """Maps odometry data from robot state proto to ROS Odometry message
 
@@ -396,8 +386,7 @@ def GetOdomFromState(
 
 
 def GetWifiFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> WiFiState:
     """Maps wireless state data from robot state proto to ROS WiFiState message
 
@@ -416,9 +405,7 @@ def GetWifiFromState(
     return wifi_msg
 
 
-def GenerateFeetTF(
-    foot_states_msg: FootStateArray
-) -> TFMessage:
+def GenerateFeetTF(foot_states_msg: FootStateArray) -> TFMessage:
     """
     Generate a tf message containing information about foot states
 
@@ -451,7 +438,7 @@ def GenerateFeetTF(
 def GetTFFromState(
     state: robot_state_pb2.RobotState,
     spot_wrapper: SpotWrapper,
-    inverse_target_frame: str
+    inverse_target_frame: str,
 ) -> TFMessage:
     """Maps robot link state data from robot state proto to ROS TFMessage message
 
@@ -503,8 +490,7 @@ def GetTFFromState(
 
 
 def GetBatteryStatesFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> BatteryStateArray:
     """Maps battery state data from robot state proto to ROS BatteryStateArray message
 
@@ -536,8 +522,7 @@ def GetBatteryStatesFromState(
 
 
 def GetPowerStatesFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> PowerState:
     """Maps power state data from robot state proto to ROS PowerState message
 
@@ -562,9 +547,7 @@ def GetPowerStatesFromState(
     return power_state_msg
 
 
-def GetDockStatesFromState(
-    state: docking_pb2.DockState
-) -> DockState:
+def GetDockStatesFromState(state: docking_pb2.DockState) -> DockState:
     """Maps dock state data from robot state proto to ROS DockState message
 
     Args:
@@ -582,7 +565,7 @@ def GetDockStatesFromState(
 
 def GetBehaviorFaults(
     behavior_faults: typing.List[robot_state_pb2.BehaviorFault],
-    spot_wrapper: SpotWrapper
+    spot_wrapper: SpotWrapper,
 ) -> typing.List[BehaviorFault]:
     """Helper function to strip out behavior faults into a list
 
@@ -607,8 +590,7 @@ def GetBehaviorFaults(
 
 
 def GetBehaviorFaultsFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> BehaviorFaultState:
     """Maps behavior fault data from robot state proto to ROS BehaviorFaultState message
 
@@ -626,8 +608,7 @@ def GetBehaviorFaultsFromState(
 
 
 def GetSystemFaults(
-    system_faults: typing.List[robot_state_pb2.SystemFault],
-    spot_wrapper: SpotWrapper
+    system_faults: typing.List[robot_state_pb2.SystemFault], spot_wrapper: SpotWrapper
 ) -> typing.List[SystemFault]:
     """Helper function to strip out system faults into a list
 
@@ -659,8 +640,7 @@ def GetSystemFaults(
 
 
 def GetSystemFaultsFromState(
-    state: robot_state_pb2.RobotState,
-    spot_wrapper: SpotWrapper
+    state: robot_state_pb2.RobotState, spot_wrapper: SpotWrapper
 ) -> SystemFaultState:
     """Maps system fault data from robot state proto to ROS SystemFaultState message
 

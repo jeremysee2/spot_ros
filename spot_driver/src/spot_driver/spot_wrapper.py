@@ -75,7 +75,7 @@ class AsyncRobotState(AsyncPeriodicQuery):
         client: RobotStateClient,
         logger: logging.Logger,
         rate: float,
-        callback: typing.Callable
+        callback: typing.Callable,
     ):
         super(AsyncRobotState, self).__init__(
             "robot-state", client, logger, period_sec=1.0 / max(rate, 1.0)
@@ -106,7 +106,7 @@ class AsyncMetrics(AsyncPeriodicQuery):
         client: RobotStateClient,
         logger: logging.Logger,
         rate: float,
-        callback: typing.Callable
+        callback: typing.Callable,
     ):
         super(AsyncMetrics, self).__init__(
             "robot-metrics", client, logger, period_sec=1.0 / max(rate, 1.0)
@@ -137,7 +137,7 @@ class AsyncLease(AsyncPeriodicQuery):
         client: LeaseClient,
         logger: logging.Logger,
         rate: float,
-        callback: typing.Callable
+        callback: typing.Callable,
     ):
         super(AsyncLease, self).__init__(
             "lease", client, logger, period_sec=1.0 / max(rate, 1.0)
@@ -169,7 +169,7 @@ class AsyncImageService(AsyncPeriodicQuery):
         logger: logging.Logger,
         rate: float,
         callback: typing.Callable,
-        image_requests: typing.List[image_pb2.ImageRequest]
+        image_requests: typing.List[image_pb2.ImageRequest],
     ):
         super(AsyncImageService, self).__init__(
             "robot_image_service", client, logger, period_sec=1.0 / max(rate, 1.0)
@@ -181,8 +181,7 @@ class AsyncImageService(AsyncPeriodicQuery):
 
     def _start_query(self):
         if self._callback:
-            callback_future = self._client.get_image_async(
-                self._image_requests)
+            callback_future = self._client.get_image_async(self._image_requests)
             callback_future.add_done_callback(self._callback)
             return callback_future
 
@@ -202,10 +201,9 @@ class AsyncIdle(AsyncPeriodicQuery):
         client: RobotCommandClient,
         logger: logging.Logger,
         rate: float,
-        spot_wrapper: "SpotWrapper"
+        spot_wrapper: "SpotWrapper",
     ):
-        super(AsyncIdle, self).__init__(
-            "idle", client, logger, period_sec=1.0 / rate)
+        super(AsyncIdle, self).__init__("idle", client, logger, period_sec=1.0 / rate)
 
         self._spot_wrapper = spot_wrapper
 
@@ -230,8 +228,7 @@ class AsyncIdle(AsyncPeriodicQuery):
                     self._logger.warn("Stand command in unknown state")
                     self._spot_wrapper._robot_params["is_standing"] = False
             except (ResponseError, RpcError) as e:
-                self._logger.error(
-                    "Error when getting robot command feedback: %s", e)
+                self._logger.error("Error when getting robot command feedback: %s", e)
                 self._spot_wrapper._last_stand_command = None
 
         if self._spot_wrapper._last_sit_command != None:
@@ -249,8 +246,7 @@ class AsyncIdle(AsyncPeriodicQuery):
                 else:
                     self._spot_wrapper._robot_params["is_sitting"] = False
             except (ResponseError, RpcError) as e:
-                self._logger.error(
-                    "Error when getting robot command feedback: %s", e)
+                self._logger.error("Error when getting robot command feedback: %s", e)
                 self._spot_wrapper._last_sit_command = None
 
         is_moving = False
@@ -308,8 +304,7 @@ class AsyncIdle(AsyncPeriodicQuery):
                     )
                     self._spot_wrapper._last_trajectory_command = None
             except (ResponseError, RpcError) as e:
-                self._logger.error(
-                    "Error when getting robot command feedback: %s", e)
+                self._logger.error("Error when getting robot command feedback: %s", e)
                 self._spot_wrapper._last_trajectory_command = None
 
         self._spot_wrapper._robot_params["is_moving"] = is_moving
@@ -340,7 +335,7 @@ class AsyncEStopMonitor(AsyncPeriodicQuery):
         client: EstopClient,
         logger: logging.Logger,
         rate: float,
-        spot_wrapper: "SpotWrapper"
+        spot_wrapper: "SpotWrapper",
     ):
         super(AsyncEStopMonitor, self).__init__(
             "estop_alive", client, logger, period_sec=1.0 / rate
@@ -349,8 +344,7 @@ class AsyncEStopMonitor(AsyncPeriodicQuery):
 
     def _start_query(self):
         if not self._spot_wrapper._estop_keepalive:
-            self._logger.debug(
-                "No keepalive yet - the lease has not been claimed.")
+            self._logger.debug("No keepalive yet - the lease has not been claimed.")
             return
 
         last_estop_status = self._spot_wrapper._estop_keepalive.status_queue.queue[-1]
@@ -409,7 +403,7 @@ class SpotWrapper:
         logger: logging.Logger,
         estop_timeout: float = 9.0,
         rates: typing.Dict[str, float] = {},
-        callbacks: typing.Dict[str, typing.Callable] = {}
+        callbacks: typing.Dict[str, typing.Callable] = {},
     ):
         self._username = username
         self._password = password
@@ -435,35 +429,39 @@ class SpotWrapper:
             "is_sitting": True,
             "is_moving": False,
             "robot_id": None,
-            "estop_timeout": estop_timeout
+            "estop_timeout": estop_timeout,
         }
 
         self._front_image_requests = []
         for source in front_image_sources:
             self._front_image_requests.append(
                 build_image_request(
-                    source, image_format=image_pb2.Image.FORMAT_RAW)  # type: ignore
+                    source, image_format=image_pb2.Image.FORMAT_RAW
+                )  # type: ignore
             )
 
         self._side_image_requests = []
         for source in side_image_sources:
             self._side_image_requests.append(
                 build_image_request(
-                    source, image_format=image_pb2.Image.FORMAT_RAW)  # type: ignore
+                    source, image_format=image_pb2.Image.FORMAT_RAW
+                )  # type: ignore
             )
 
         self._rear_image_requests = []
         for source in rear_image_sources:
             self._rear_image_requests.append(
                 build_image_request(
-                    source, image_format=image_pb2.Image.FORMAT_RAW)  # type: ignore
+                    source, image_format=image_pb2.Image.FORMAT_RAW
+                )  # type: ignore
             )
 
         self._hand_image_requests = []
         for source in hand_image_sources:
             self._hand_image_requests.append(
                 build_image_request(
-                    source, image_format=image_pb2.Image.FORMAT_RAW)  # type: ignore
+                    source, image_format=image_pb2.Image.FORMAT_RAW
+                )  # type: ignore
             )
 
         try:
@@ -544,7 +542,7 @@ class SpotWrapper:
                         "image_client": self._image_client,
                         "estop_client": self._estop_client,
                         "docking_client": self._docking_client,
-                        "robot_command_method": self._robot_command
+                        "robot_command_method": self._robot_command,
                     }
                 except Exception as e:
                     sleep_secs = 15
@@ -605,7 +603,7 @@ class SpotWrapper:
                 self._hand_image_requests,
             )
             self._idle_task = AsyncIdle(
-                self._robot_clients['robot_command_client'], self._logger, 10.0, self
+                self._robot_clients["robot_command_client"], self._logger, 10.0, self
             )
             self._estop_monitor = AsyncEStopMonitor(
                 self._estop_client, self._logger, 20.0, self
@@ -630,14 +628,18 @@ class SpotWrapper:
             if self._robot.has_arm():
                 self._async_tasks.add_task(self._hand_image_task)
                 self._spot_arm = SpotArm(
-                    self._robot, self._logger, self._robot_params, self._robot_clients)
+                    self._robot, self._logger, self._robot_params, self._robot_clients
+                )
 
             self._spot_estop_lease = SpotEstopLease(
-                self._robot, self._logger, self._robot_params, self._robot_clients)
+                self._robot, self._logger, self._robot_params, self._robot_clients
+            )
             self._spot_docking = SpotDocking(
-                self._robot, self._logger, self._robot_params, self._robot_clients)
+                self._robot, self._logger, self._robot_params, self._robot_clients
+            )
             self._spot_graph_nav = SpotGraphNav(
-                self._robot, self._logger, self._robot_params, self._robot_clients)
+                self._robot, self._logger, self._robot_params, self._robot_clients
+            )
 
             self._lease = None
 
@@ -791,7 +793,7 @@ class SpotWrapper:
         self,
         command_proto: robot_command_pb2.RobotCommand,
         end_time_secs: typing.Optional[float] = None,
-        timesync_endpoint: typing.Optional[TimeSyncEndpoint] = None
+        timesync_endpoint: typing.Optional[TimeSyncEndpoint] = None,
     ) -> typing.Tuple[bool, str, typing.Optional[str]]:
         """Generic blocking function for sending commands to robots.
 
@@ -801,7 +803,7 @@ class SpotWrapper:
             timesync_endpoint: (optional) Time sync endpoint
         """
         try:
-            id = self._robot_clients['robot_command_client'].robot_command(
+            id = self._robot_clients["robot_command_client"].robot_command(
                 lease=None,
                 command=command_proto,
                 end_time_secs=end_time_secs,
@@ -823,8 +825,7 @@ class SpotWrapper:
 
     def sit(self) -> typing.Tuple[bool, str]:
         """Stop the robot's motion and sit down if able."""
-        response = self._robot_command(
-            RobotCommandBuilder.synchro_sit_command())
+        response = self._robot_command(RobotCommandBuilder.synchro_sit_command())
         self._last_sit_command = response[2]
         return response[0], response[1]
 
@@ -834,7 +835,7 @@ class SpotWrapper:
         body_height: float = 0,
         body_yaw: float = 0,
         body_pitch: float = 0,
-        body_roll: float = 0
+        body_roll: float = 0,
     ) -> typing.Tuple[bool, str]:
         """
         If the e-stop is enabled, and the motor power is enabled, stand the robot up.
@@ -852,8 +853,7 @@ class SpotWrapper:
         """
         if any([body_height, body_yaw, body_pitch, body_roll]):
             # If any of the orientation parameters are nonzero use them to pose the body
-            body_orientation = EulerZXY(
-                yaw=body_yaw, pitch=body_pitch, roll=body_roll)
+            body_orientation = EulerZXY(yaw=body_yaw, pitch=body_pitch, roll=body_roll)
             response = self._robot_command(
                 RobotCommandBuilder.synchro_stand_command(
                     body_height=body_height, footprint_R_body=body_orientation
@@ -862,8 +862,7 @@ class SpotWrapper:
         else:
             # Otherwise just use the mobility params
             response = self._robot_command(
-                RobotCommandBuilder.synchro_stand_command(
-                    params=self._mobility_params)
+                RobotCommandBuilder.synchro_stand_command(params=self._mobility_params)
             )
 
         if monitor_command:
@@ -872,14 +871,13 @@ class SpotWrapper:
 
     def safe_power_off(self) -> typing.Tuple[bool, str]:
         """Stop the robot's motion and sit if possible.  Once sitting, disable motor power."""
-        response = self._robot_command(
-            RobotCommandBuilder.safe_power_off_command())
+        response = self._robot_command(RobotCommandBuilder.safe_power_off_command())
         return response[0], response[1]
 
     def clear_behavior_fault(self, id: int):
         """Clear the behavior fault defined by id."""
         try:
-            rid = self._robot_clients['robot_command_client'].clear_behavior_fault(
+            rid = self._robot_clients["robot_command_client"].clear_behavior_fault(
                 behavior_fault_id=id, lease=None
             )
             return True, "Success", rid
@@ -901,10 +899,7 @@ class SpotWrapper:
         )
         return response[0], response[1]
 
-    def set_mobility_params(
-        self,
-        mobility_params: spot_command_pb2.MobilityParams
-    ):
+    def set_mobility_params(self, mobility_params: spot_command_pb2.MobilityParams):
         """Set Params for mobility and movement
 
         Args:
@@ -921,7 +916,7 @@ class SpotWrapper:
         v_x: float,
         v_y: float,
         v_rot: float,
-        cmd_duration: float = 0.125 # TODO: Investigate what this should be for SDK 3.2.0, ref github issue #96
+        cmd_duration: float = 0.125,  # TODO: Investigate what this should be for SDK 3.2.0, ref github issue #96
     ) -> typing.Tuple[bool, str]:
         """Send a velocity motion command to the robot.
 

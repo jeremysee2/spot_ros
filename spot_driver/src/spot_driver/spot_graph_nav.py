@@ -17,22 +17,25 @@ from bosdyn.api.graph_nav import nav_pb2
 
 from . import graph_nav_util
 
-class SpotGraphNav():
+
+class SpotGraphNav:
     def __init__(
         self,
         robot: Robot,
         logger: logging.Logger,
         robot_params: typing.Dict[str, typing.Any],
-        robot_clients: typing.Dict[str, typing.Any]
+        robot_clients: typing.Dict[str, typing.Any],
     ):
         self._robot = robot
         self._logger = logger
         self._graph_nav_client: GraphNavClient = robot_clients["graph_nav_client"]
         self._robot_state_client: RobotStateClient = robot_clients["robot_state_client"]
-        self._robot_command_client: RobotCommandClient = robot_clients['robot_command_client']
+        self._robot_command_client: RobotCommandClient = robot_clients[
+            "robot_command_client"
+        ]
         self._lease_client: LeaseClient = robot_clients["lease_client"]
         self._power_client: PowerClient = robot_clients["power_client"]
-        self._lease_wallet: LeaseWallet = self._lease_client.lease_wallet # type: ignore
+        self._lease_wallet: LeaseWallet = self._lease_client.lease_wallet  # type: ignore
         self._robot_params = robot_params
 
         # Store the most recent knowledge of the state of the robot based on rpc calls.
@@ -78,13 +81,15 @@ class SpotGraphNav():
             upload_filepath = upload_path
 
         # Boolean indicating the robot's power state.
-        power_state = self._robot_state_client.get_robot_state().power_state # type: ignore
+        power_state = self._robot_state_client.get_robot_state().power_state  # type: ignore
         self._started_powered_on = power_state.motor_power_state == power_state.STATE_ON
         self._powered_on = self._started_powered_on
 
         # TODO FIX ME somehow,,,, if the robot is stand, need to sit the robot before starting graph nav
         if self._robot_params["is_standing"] and not self._robot_params["is_sitting"]:
-            raise Exception("Robot is standing, please sit the robot before starting graph nav")
+            raise Exception(
+                "Robot is standing, please sit the robot before starting graph nav"
+            )
 
         # TODO verify estop  / claim / power_on
         self._clear_graph()
@@ -103,9 +108,9 @@ class SpotGraphNav():
     def _get_localization_state(self, *args):
         """Get the current localization and state of the robot."""
         state = self._graph_nav_client.get_localization_state()
-        self._logger.info("Got localization: \n%s" % str(state.localization)) # type: ignore
+        self._logger.info("Got localization: \n%s" % str(state.localization))  # type: ignore
         odom_tform_body = get_odom_tform_body(
-            state.robot_kinematics.transforms_snapshot # type: ignore
+            state.robot_kinematics.transforms_snapshot  # type: ignore
         )
         self._logger.info(
             "Got robot state in kinematic odometry frame: \n%s" % str(odom_tform_body)
@@ -115,8 +120,8 @@ class SpotGraphNav():
         """Trigger localization when near a fiducial."""
         robot_state = self._robot_state_client.get_robot_state()
         current_odom_tform_body = get_odom_tform_body(
-            robot_state.kinematic_state.transforms_snapshot # type: ignore
-        ).to_proto() # type: ignore
+            robot_state.kinematic_state.transforms_snapshot  # type: ignore
+        ).to_proto()  # type: ignore
         # Create an empty instance for initial localization since we are asking it to localize
         # based on the nearest fiducial.
         localization = nav_pb2.Localization()
@@ -144,18 +149,18 @@ class SpotGraphNav():
 
         robot_state = self._robot_state_client.get_robot_state()
         current_odom_tform_body = get_odom_tform_body(
-            robot_state.kinematic_state.transforms_snapshot # type: ignore
-        ).to_proto() # type: ignore
+            robot_state.kinematic_state.transforms_snapshot  # type: ignore
+        ).to_proto()  # type: ignore
         # Create an initial localization to the specified waypoint as the identity.
         localization = nav_pb2.Localization()
-        localization.waypoint_id = destination_waypoint # type: ignore
-        localization.waypoint_tform_body.rotation.w = 1.0 # type: ignore
+        localization.waypoint_id = destination_waypoint  # type: ignore
+        localization.waypoint_tform_body.rotation.w = 1.0  # type: ignore
         self._graph_nav_client.set_localization(
             initial_guess_localization=localization,
             # It's hard to get the pose perfect, search +/-20 deg and +/-20cm (0.2m).
             max_distance=0.2,
             max_yaw=20.0 * math.pi / 180.0,
-            fiducial_init=graph_nav_pb2.SetLocalizationRequest.FIDUCIAL_INIT_NO_FIDUCIAL, # type: ignore
+            fiducial_init=graph_nav_pb2.SetLocalizationRequest.FIDUCIAL_INIT_NO_FIDUCIAL,  # type: ignore
             ko_tform_body=current_odom_tform_body,
         )
 
@@ -170,7 +175,7 @@ class SpotGraphNav():
         self._current_graph = graph
 
         localization_id = (
-            self._graph_nav_client.get_localization_state().localization.waypoint_id # type: ignore
+            self._graph_nav_client.get_localization_state().localization.waypoint_id  # type: ignore
         )
 
         # Update and print waypoints and edges
@@ -178,7 +183,7 @@ class SpotGraphNav():
             self._current_annotation_name_to_wp_id,
             self._current_edges,
         ) = graph_nav_util.update_waypoints_and_edges(
-            graph, localization_id, self._logger # type: ignore
+            graph, localization_id, self._logger  # type: ignore
         )
         return self._current_annotation_name_to_wp_id, self._current_edges
 
@@ -189,38 +194,38 @@ class SpotGraphNav():
             # Load the graph from disk.
             data = graph_file.read()
             self._current_graph = map_pb2.Graph()
-            self._current_graph.ParseFromString(data) # type: ignore
+            self._current_graph.ParseFromString(data)  # type: ignore
             self._logger.info(
                 "Loaded graph has {} waypoints and {} edges".format(
-                    len(self._current_graph.waypoints), len(self._current_graph.edges) # type: ignore
+                    len(self._current_graph.waypoints), len(self._current_graph.edges)  # type: ignore
                 )
             )
-        for waypoint in self._current_graph.waypoints: # type: ignore
+        for waypoint in self._current_graph.waypoints:  # type: ignore
             # Load the waypoint snapshots from disk.
             with open(
                 upload_filepath + "/waypoint_snapshots/{}".format(waypoint.snapshot_id),
                 "rb",
             ) as snapshot_file:
                 waypoint_snapshot = map_pb2.WaypointSnapshot()
-                waypoint_snapshot.ParseFromString(snapshot_file.read()) # type: ignore
+                waypoint_snapshot.ParseFromString(snapshot_file.read())  # type: ignore
                 self._current_waypoint_snapshots[
-                    waypoint_snapshot.id # type: ignore
+                    waypoint_snapshot.id  # type: ignore
                 ] = waypoint_snapshot
-        for edge in self._current_graph.edges: # type: ignore
+        for edge in self._current_graph.edges:  # type: ignore
             # Load the edge snapshots from disk.
             with open(
                 upload_filepath + "/edge_snapshots/{}".format(edge.snapshot_id), "rb"
             ) as snapshot_file:
                 edge_snapshot = map_pb2.EdgeSnapshot()
-                edge_snapshot.ParseFromString(snapshot_file.read()) # type: ignore
-                self._current_edge_snapshots[edge_snapshot.id] = edge_snapshot # type: ignore
+                edge_snapshot.ParseFromString(snapshot_file.read())  # type: ignore
+                self._current_edge_snapshots[edge_snapshot.id] = edge_snapshot  # type: ignore
         # Upload the graph to the robot.
         self._logger.info("Uploading the graph and snapshots to the robot...")
         self._graph_nav_client.upload_graph(
             lease=self._lease.lease_proto, graph=self._current_graph
         )
         # Upload the snapshots to the robot.
-        for waypoint_snapshot in self._current_waypoint_snapshots.values(): 
+        for waypoint_snapshot in self._current_waypoint_snapshots.values():
             self._graph_nav_client.upload_waypoint_snapshot(waypoint_snapshot)
             self._logger.info("Uploaded {}".format(waypoint_snapshot.id))
         for edge_snapshot in self._current_edge_snapshots.values():
@@ -231,7 +236,7 @@ class SpotGraphNav():
         # and it if is not, prompt the user to localize the robot before attempting
         # any navigation commands.
         localization_state = self._graph_nav_client.get_localization_state()
-        if not localization_state.localization.waypoint_id: # type: ignore
+        if not localization_state.localization.waypoint_id:  # type: ignore
             # The robot is not localized to the newly uploaded graph.
             self._logger.info(
                 "Upload complete! The robot is currently not localized to the map; please localize",
@@ -292,22 +297,22 @@ class SpotGraphNav():
         status = self._graph_nav_client.navigation_feedback(nav_to_cmd_id)
         if (
             status.status
-            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_REACHED_GOAL # type: ignore
+            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_REACHED_GOAL  # type: ignore
         ):
             return True, "Successfully completed the navigation commands!"
-        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_LOST: # type: ignore
+        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_LOST:  # type: ignore
             return (
                 False,
                 "Robot got lost when navigating the route, the robot will now sit down.",
             )
-        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_STUCK: # type: ignore
+        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_STUCK:  # type: ignore
             return (
                 False,
                 "Robot got stuck when navigating the route, the robot will now sit down.",
             )
         elif (
             status.status
-            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_ROBOT_IMPAIRED # type: ignore
+            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_ROBOT_IMPAIRED  # type: ignore
         ):
             return False, "Robot is impaired."
         else:
@@ -393,7 +398,7 @@ class SpotGraphNav():
 
     def _clear_graph(self, *args) -> bool:
         """Clear the state of the map on the robot, removing all waypoints and edges."""
-        return self._graph_nav_client.clear_graph(lease=self._lease.lease_proto) # type: ignore
+        return self._graph_nav_client.clear_graph(lease=self._lease.lease_proto)  # type: ignore
 
     def toggle_power(self, should_power_on: bool) -> bool:
         """Power the robot on/off dependent on the current power state."""
@@ -409,7 +414,7 @@ class SpotGraphNav():
                 )  # 10 second timeout for waiting for the state response.
                 if (
                     state_response.power_state.motor_power_state
-                    == robot_state_proto.PowerState.STATE_ON # type: ignore
+                    == robot_state_proto.PowerState.STATE_ON  # type: ignore
                 ):
                     motors_on = True
                 else:
@@ -418,7 +423,9 @@ class SpotGraphNav():
         elif is_powered_on and not should_power_on:
             # Safe power off (robot will sit then power down) when it is in a
             # powered-on state.
-            safe_power_off(self._robot_clients['robot_command_client'], self._robot_state_client)
+            safe_power_off(
+                self._robot_clients["robot_command_client"], self._robot_state_client
+            )
         else:
             # Return the current power state without change.
             return is_powered_on
@@ -428,7 +435,7 @@ class SpotGraphNav():
 
     def check_is_powered_on(self) -> bool:
         """Determine if the robot is powered on or off."""
-        power_state = self._robot_state_client.get_robot_state().power_state # type: ignore
+        power_state = self._robot_state_client.get_robot_state().power_state  # type: ignore
         self._powered_on = power_state.motor_power_state == power_state.STATE_ON
         return self._powered_on
 
@@ -440,23 +447,23 @@ class SpotGraphNav():
         status = self._graph_nav_client.navigation_feedback(command_id)
         if (
             status.status
-            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_REACHED_GOAL # type: ignore
+            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_REACHED_GOAL  # type: ignore
         ):
             # Successfully completed the navigation commands!
             return True
-        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_LOST: # type: ignore
+        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_LOST:  # type: ignore
             self._logger.error(
                 "Robot got lost when navigating the route, the robot will now sit down."
             )
             return True
-        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_STUCK: # type: ignore
+        elif status.status == graph_nav_pb2.NavigationFeedbackResponse.STATUS_STUCK:  # type: ignore
             self._logger.error(
                 "Robot got stuck when navigating the route, the robot will now sit down."
             )
             return True
         elif (
             status.status
-            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_ROBOT_IMPAIRED # type: ignore
+            == graph_nav_pb2.NavigationFeedbackResponse.STATUS_ROBOT_IMPAIRED  # type: ignore
         ):
             self._logger.error("Robot is impaired.")
             return True
@@ -468,20 +475,20 @@ class SpotGraphNav():
         self,
         current_edges: typing.Dict[str, typing.List[str]],
         waypoint1: str,
-        waypoint2: str
-    ) -> typing.Optional[map_pb2.Edge.Id]: # type: ignore
+        waypoint2: str,
+    ) -> typing.Optional[map_pb2.Edge.Id]:  # type: ignore
         """Find an edge in the graph that is between two waypoint ids."""
         # Return the correct edge id as soon as it's found.
         for edge_to_id in current_edges:
             for edge_from_id in current_edges[edge_to_id]:
                 if (waypoint1 == edge_to_id) and (waypoint2 == edge_from_id):
                     # This edge matches the pair of waypoints! Add it the edge list and continue.
-                    return map_pb2.Edge.Id( # type: ignore
+                    return map_pb2.Edge.Id(  # type: ignore
                         from_waypoint=waypoint2, to_waypoint=waypoint1
                     )
                 elif (waypoint2 == edge_to_id) and (waypoint1 == edge_from_id):
                     # This edge matches the pair of waypoints! Add it the edge list and continue.
-                    return map_pb2.Edge.Id( # type: ignore
+                    return map_pb2.Edge.Id(  # type: ignore
                         from_waypoint=waypoint1, to_waypoint=waypoint2
                     )
         return None
