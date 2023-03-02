@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 PKG = "ros_helpers"
 NAME = "ros_helpers_test"
 SUITE = "ros_helpers_test.TestSuiteROSHelpers"
@@ -915,4 +916,26 @@ class TestSuiteROSHelpers(unittest.TestSuite):
 
 if __name__ == "__main__":
     print("Starting tests!")
-    rostest.rosrun(PKG, NAME, TestSuiteROSHelpers)
+    import rosunit
+
+    rospy.init_node("ros_helpers test")
+
+    rosunit.unitrun(PKG, NAME, TestPopulateTransformStamped)
+    rosunit.unitrun(PKG, NAME, TestGetImageMsg)
+    rosunit.unitrun(PKG, NAME, TestGetJointStatesFromState)
+    rosunit.unitrun(PKG, NAME, TestGetEStopStateFromState)
+    rosunit.unitrun(PKG, NAME, TestGetFeetFromState)
+    rosunit.unitrun(PKG, NAME, TestGetOdomTwistFromState)
+    rosunit.unitrun(PKG, NAME, TestGetOdomFromState)
+    rosunit.unitrun(PKG, NAME, TestGetWifiFromState)
+    rosunit.unitrun(PKG, NAME, TestGenerateFeetTF)
+    rosunit.unitrun(PKG, NAME, TestGetTFFromState)
+    rosunit.unitrun(PKG, NAME, TestGetBatteryStatesFromState)
+    rosunit.unitrun(PKG, NAME, TestGetPowerStatesFromState)
+    rosunit.unitrun(PKG, NAME, TestGetDockStatesFromState)
+    rosunit.unitrun(PKG, NAME, TestGetBehaviorFaults)
+    rosunit.unitrun(PKG, NAME, TestGetBehaviorFaultsFromState)
+    rosunit.unitrun(PKG, NAME, TestGetSystemFaults)
+    rosunit.unitrun(PKG, NAME, TestGetSystemFaultsFromState)
+
+    print("Tests complete!")

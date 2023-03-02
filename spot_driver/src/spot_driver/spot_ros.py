@@ -104,6 +104,7 @@ class SpotROS:
 
     def __init__(self):
         self.callbacks = {}
+        self.spot_wrapper = None
         """Dictionary listing what callback to use for what data task"""
         self.callbacks["robot_state"] = self.RobotStateCB
         self.callbacks["metrics"] = self.MetricsCB
@@ -114,6 +115,7 @@ class SpotROS:
         self.callbacks["hand_image"] = self.HandImageCB
         self.active_camera_tasks = []
         self.camera_pub_to_async_task_mapping = {}
+        self.node_name = "spot_ros"
 
     def RobotStateCB(self, results):
         """Callback for when the Spot Wrapper gets new robot state data.
@@ -187,6 +189,7 @@ class SpotROS:
             results: FutureWrapper object of AsyncPeriodicQuery callback
         """
         metrics = self.spot_wrapper.metrics
+
         if metrics:
             metrics_msg = Metrics()
             local_time = self.spot_wrapper.robotToLocalTime(
@@ -1277,7 +1280,7 @@ class SpotROS:
             )
             if mobility_params.HasField("terrain_params"):  # type: ignore
                 # type: ignore
-                if mobility_params.terrain_params.HasField("ground_mu_hint"):
+                if mobility_params.terrain_params.HasField("ground_mu_hint"):  # type: ignore
                     mobility_params_msg.terrain_params.ground_mu_hint = (
                         mobility_params.terrain_params.ground_mu_hint  # type: ignore
                     )
@@ -1311,7 +1314,7 @@ class SpotROS:
         feedback_msg.standing = self.spot_wrapper.is_standing
         feedback_msg.sitting = self.spot_wrapper.is_sitting
         feedback_msg.moving = self.spot_wrapper.is_moving
-        id_: robot_id_pb2.RobotId = self.spot_wrapper.id
+        id_: robot_id_pb2.RobotId = self.spot_wrapper.id  # type: ignore
         try:
             feedback_msg.serial_number = id_.serial_number  # type: ignore
             feedback_msg.species = id_.species  # type: ignore
@@ -1338,35 +1341,19 @@ class SpotROS:
                     f"Detected subscriber for {task_name} task, adding task to publish"
                 )
 
-    def main(self):
-        """Main function for the SpotROS class.  Gets config from ROS and initializes the wrapper.  Holds lease from wrapper and updates all async tasks at the ROS rate"""
-        rospy.init_node("spot_ros", anonymous=True)
+    def initialize_spot_wrapper(self):
+        if not self.spot_wrapper:
+            self.spot_wrapper = SpotWrapper(
+                self.username,
+                self.password,
+                self.hostname,
+                self.logger,
+                self.estop_timeout,
+                self.rates,
+                self.callbacks,
+            )
 
-        self.rates = rospy.get_param("~rates", {})
-        if "loop_frequency" in self.rates:
-            loop_rate = self.rates["loop_frequency"]
-        else:
-            loop_rate = 50
-
-        for param, rate in self.rates.items():
-            if rate > loop_rate:
-                rospy.logwarn(
-                    "{} has a rate of {} specified, which is higher than the loop rate of {}. It will not "
-                    "be published at the expected frequency".format(
-                        param, rate, loop_rate
-                    )
-                )
-
-        rate = rospy.Rate(loop_rate)
-        self.username = rospy.get_param("~username", "default_value")
-        self.password = rospy.get_param("~password", "default_value")
-        self.hostname = rospy.get_param("~hostname", "default_value")
-        self.motion_deadzone = rospy.get_param("~deadzone", 0.05)
-        self.estop_timeout = rospy.get_param("~estop_timeout", 9.0)
-        self.autonomy_enabled = rospy.get_param("~autonomy_enabled", True)
-        self.allow_motion = rospy.get_param("~allow_motion", True)
-        self.is_charging = False
-
+    def initialize_tf2(self):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
@@ -1396,22 +1383,7 @@ class SpotROS:
             )
             return
 
-        self.logger = logging.getLogger("rosout")
-
-        rospy.loginfo("Starting ROS driver for Spot")
-        self.spot_wrapper = SpotWrapper(
-            self.username,
-            self.password,
-            self.hostname,
-            self.logger,
-            self.estop_timeout,
-            self.rates,
-            self.callbacks,
-        )
-
-        if not self.spot_wrapper.is_valid or not self.spot_wrapper:
-            return
-
+    def initialize_publishers(self):
         # Images #
         self.back_image_pub = rospy.Publisher("camera/back/image", Image, queue_size=10)
         self.frontleft_image_pub = rospy.Publisher(
@@ -1552,6 +1524,7 @@ class SpotROS:
             "status/mobility_params", MobilityParams, queue_size=10
         )
 
+    def initialize_subscribers(self):
         rospy.Subscriber("cmd_vel", Twist, self.cmdVelCallback, queue_size=1)
         rospy.Subscriber(
             "go_to_pose", PoseStamped, self.trajectory_callback, queue_size=1
@@ -1562,6 +1535,8 @@ class SpotROS:
             self.in_motion_or_idle_pose_cb,
             queue_size=1,
         )
+
+    def initialize_services(self):
         rospy.Service("claim", Trigger, self.handle_claim)
         rospy.Service("release", Trigger, self.handle_release)
         rospy.Service("self_right", Trigger, self.handle_self_right)
@@ -1609,6 +1584,8 @@ class SpotROS:
             "force_trajectory", ArmForceTrajectory, self.handle_force_trajectory
         )
         rospy.Service("gripper_pose", HandPose, self.handle_hand_pose)
+
+    def initialize_action_servers(self):
         #########################################################
 
         self.navigate_as = actionlib.SimpleActionServer(
@@ -1642,6 +1619,49 @@ class SpotROS:
             auto_start=False,
         )
         self.body_pose_as.start()
+
+    def main(self):
+        """Main function for the SpotROS class.  Gets config from ROS and initializes the wrapper.  Holds lease from wrapper and updates all async tasks at the ROS rate"""
+        rospy.init_node(self.node_name, anonymous=True)
+
+        self.rates = rospy.get_param("~rates", {})
+        if "loop_frequency" in self.rates:
+            loop_rate = self.rates["loop_frequency"]
+        else:
+            loop_rate = 50
+
+        for param, rate in self.rates.items():
+            if rate > loop_rate:
+                rospy.logwarn(
+                    "{} has a rate of {} specified, which is higher than the loop rate of {}. It will not "
+                    "be published at the expected frequency".format(
+                        param, rate, loop_rate
+                    )
+                )
+
+        rate = rospy.Rate(loop_rate)
+        self.username = rospy.get_param("~username", "default_value")
+        self.password = rospy.get_param("~password", "default_value")
+        self.hostname = rospy.get_param("~hostname", "default_value")
+        self.motion_deadzone = rospy.get_param("~deadzone", 0.05)
+        self.estop_timeout = rospy.get_param("~estop_timeout", 9.0)
+        self.autonomy_enabled = rospy.get_param("~autonomy_enabled", True)
+        self.allow_motion = rospy.get_param("~allow_motion", True)
+        self.is_charging = False
+
+        self.initialize_tf2()
+
+        self.logger = logging.getLogger("rosout")
+
+        rospy.loginfo("Starting ROS driver for Spot")
+        self.initialize_spot_wrapper()
+        if not self.spot_wrapper.is_valid or not self.spot_wrapper:
+            return
+
+        self.initialize_publishers()
+        self.initialize_subscribers()
+        self.initialize_services()
+        self.initialize_action_servers()
 
         # Stop service calls other services so initialise it after them to prevent crashes which can happen if
         # the service is immediately called

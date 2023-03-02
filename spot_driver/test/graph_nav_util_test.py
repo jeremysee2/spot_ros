@@ -1,9 +1,9 @@
+#!/usr/bin/env python3
 PKG = "graph_nav_util"
 NAME = "graph_nav_util_test"
 SUITE = "graph_nav_util_test.TestSuiteGraphNavUtil"
 
 import unittest
-import rosunit
 import logging
 import spot_driver.graph_nav_util as graph_nav_util
 from bosdyn.api.graph_nav import map_pb2
@@ -208,4 +208,10 @@ class TestSuiteGraphNavUtil(unittest.TestSuite):
 
 if __name__ == "__main__":
     print("Starting tests!")
-    rosunit.unitrun(PKG, NAME, TestSuiteGraphNavUtil)
+    import rosunit
+
+    rosunit.unitrun(PKG, NAME, TestGraphNavUtilShortCode)
+    rosunit.unitrun(PKG, NAME, TestGraphNavUtilFindUniqueWaypointId)
+    rosunit.unitrun(PKG, NAME, TestGraphNavUtilUpdateWaypointsEdges)
+
+    print("Tests complete!")

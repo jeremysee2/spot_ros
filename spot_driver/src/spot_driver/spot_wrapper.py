@@ -699,7 +699,7 @@ class SpotWrapper:
         return self._robot_metrics_task.proto  # type: ignore
 
     @property
-    def lease(self) -> lease_pb2.ListLeasesResponse:
+    def lease(self) -> typing.List[lease_pb2.LeaseResource]:
         """Return latest proto from the _lease_task"""
         return self._lease_task.proto  # type: ignore
 
