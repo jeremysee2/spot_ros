@@ -2,11 +2,24 @@
 import rospy
 import typing
 
-from std_srvs.srv import Trigger, TriggerResponse, SetBool, SetBoolResponse
+from std_srvs.srv import TriggerResponse, SetBool, SetBoolResponse
+from spot_msgs.srv import PosedStandResponse, PosedStandRequest
+from spot_msgs.srv import ClearBehaviorFaultResponse
+from spot_msgs.srv import SetLocomotionResponse
+from spot_msgs.srv import SetSwingHeightResponse
+from spot_msgs.srv import SetVelocityResponse
+from spot_msgs.msg import MobilityParams
+from spot_msgs.srv import ListGraphResponse
+from spot_msgs.srv import DockResponse, GetDockStateResponse
+from spot_msgs.srv import GripperAngleMoveResponse, GripperAngleMoveRequest
+from spot_msgs.srv import ArmJointMovementResponse, ArmJointMovementRequest
+from spot_msgs.srv import ArmForceTrajectoryResponse
+from spot_msgs.srv import HandPoseResponse, HandPoseRequest
 
 from bosdyn.api import image_pb2, robot_state_pb2, lease_pb2, geometry_pb2
-from bosdyn.client.async_tasks import AsyncPeriodicQuery, AsyncTasks
-from bosdyn.client.robot_command import RobotCommandClient, RobotCommandBuilder
+from bosdyn.api.docking import docking_pb2
+from bosdyn.client.async_tasks import AsyncTasks
+from bosdyn.client.robot_command import RobotCommandBuilder
 from google.protobuf import wrappers_pb2, timestamp_pb2, duration_pb2
 from bosdyn.client.frame_helpers import (
     add_edge_to_tree,
@@ -122,7 +135,144 @@ class TestSpotWrapper(SpotWrapper):
 
 class TestSpotROS(SpotROS):
     def handle_claim(self, req):
-        return TriggerResponse(success=True, message="Success")
+        return TriggerResponse(success=True, message="Successfully called claim")
+
+    def handle_release(self, req):
+        return TriggerResponse(success=True, message="Successfully called release")
+
+    def handle_locked_stop(self, req):
+        return TriggerResponse(success=True, message="Successfully called locked_stop")
+
+    def handle_stop(self, req):
+        return TriggerResponse(success=True, message="Successfully called stop")
+
+    def handle_self_right(self, req):
+        return TriggerResponse(success=True, message="Successfully called self_right")
+
+    def handle_sit(self, req):
+        return TriggerResponse(success=True, message="Successfully called sit")
+
+    def handle_stand(self, req):
+        return TriggerResponse(success=True, message="Successfully called stand")
+
+    def handle_posed_stand(self, req: PosedStandRequest):
+        return PosedStandResponse(
+            success=True, message="Successfully called posed_stand"
+        )
+
+    def handle_power_on(self, req) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called power_on")
+
+    def handle_safe_power_off(self, req) -> TriggerResponse:
+        return TriggerResponse(
+            success=True, message="Successfully called safe_power_off"
+        )
+
+    def handle_estop_hard(self, req) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called estop_hard")
+
+    def handle_estop_gentle(self, req) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called estop_gentle")
+
+    def handle_estop_release(self, req) -> TriggerResponse:
+        return TriggerResponse(
+            success=True, message="Successfully called estop_release"
+        )
+
+    def handle_clear_behavior_fault(self, req) -> ClearBehaviorFaultResponse:
+        return ClearBehaviorFaultResponse(
+            success=True, message="Successfully called clear_behavior_fault"
+        )
+
+    def handle_stair_mode(self, req) -> SetBoolResponse:
+        return SetBoolResponse(success=True, message="Successfully called stair_mode")
+
+    def handle_locomotion_mode(self, req) -> SetLocomotionResponse:
+        return SetLocomotionResponse(
+            success=True, message="Successfully called locomotion_mode"
+        )
+
+    def handle_swing_height(self, req) -> SetSwingHeightResponse:
+        return SetSwingHeightResponse(
+            success=True, message="Successfully called swing_height"
+        )
+
+    def handle_velocity_limit(self, req) -> SetVelocityResponse:
+        return SetVelocityResponse(
+            success=True, message="Successfully called velocity_limit"
+        )
+
+    def handle_allow_motion(self, req: SetBool) -> typing.Tuple[bool, str]:
+        return True, "Successfully called allow_motion"
+
+    def handle_obstacle_params(self, req: MobilityParams) -> typing.Tuple[bool, str]:
+        return True, "Successfully called obstacle_params"
+
+    def handle_terrain_params(self, req: MobilityParams) -> typing.Tuple[bool, str]:
+        return True, "Successfully called terrain_params"
+
+    def handle_list_graph(self, upload_path) -> ListGraphResponse:
+        return ListGraphResponse(waypoint_ids=["1", "2", "3"])
+
+    def handle_roll_over_right(self, req) -> TriggerResponse:
+        return TriggerResponse(
+            success=True, message="Successfully called roll_over_right"
+        )
+
+    def handle_roll_over_left(self, req) -> TriggerResponse:
+        return TriggerResponse(
+            success=True, message="Successfully called roll_over_left"
+        )
+
+    def handle_dock(self, req) -> DockResponse:
+        return DockResponse(success=True, message="Successfully called dock")
+
+    def handle_undock(self, req) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called undock")
+
+    def handle_get_docking_state(self, req) -> GetDockStateResponse:
+        return GetDockStateResponse(dock_state=docking_pb2.DockState())
+
+    def handle_arm_stow(self, srv_data) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called arm_stow")
+
+    def handle_arm_unstow(self, srv_data) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called arm_unstow")
+
+    def handle_gripper_open(self, srv_data) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called gripper_open")
+
+    def handle_gripper_close(self, srv_data) -> TriggerResponse:
+        return TriggerResponse(
+            success=True, message="Successfully called gripper_close"
+        )
+
+    def handle_arm_carry(self, srv_data) -> TriggerResponse:
+        return TriggerResponse(success=True, message="Successfully called arm_carry")
+
+    def handle_gripper_angle_open(
+        self, srv_data: GripperAngleMoveRequest
+    ) -> GripperAngleMoveResponse:
+        return GripperAngleMoveResponse(
+            success=True, message="Successfully called gripper_angle_open"
+        )
+
+    def handle_arm_joint_move(
+        self, srv_data: ArmJointMovementRequest
+    ) -> ArmJointMovementResponse:
+        return ArmJointMovementResponse(
+            success=True, message="Successfully called arm_joint_move"
+        )
+
+    def handle_force_trajectory(self, srv_data) -> ArmForceTrajectoryResponse:
+        return ArmForceTrajectoryResponse(
+            success=True, message="Successfully called force_trajectory"
+        )
+
+    def handle_gripper_pose(self, srv_data: HandPoseRequest) -> HandPoseResponse:
+        return HandPoseResponse(
+            success=True, message="Successfully called gripper_pose"
+        )
 
 
 # Run the mock SpotROS class as a node
@@ -553,8 +703,11 @@ class MockSpotROS:
         self.spot_ros.tf_name_vision_odom = "vision"
         self.spot_ros.tf_name_raw_vision = "vision"
 
-        # Set up the publishers
+        # Set up the ROS publishers, subscribers, services, and action servers
         self.spot_ros.initialize_publishers()
+        self.spot_ros.initialize_subscribers()
+        self.spot_ros.initialize_services()
+        self.spot_ros.initialize_action_servers()
 
         # Manually set robot_state, metrics, lease data
         self.set_robot_state()

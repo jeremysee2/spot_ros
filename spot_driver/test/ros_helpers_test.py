@@ -4,14 +4,10 @@ NAME = "ros_helpers_test"
 SUITE = "ros_helpers_test.TestSuiteROSHelpers"
 
 import unittest
-import sys
-import rostest
 import rospy
 
 import spot_driver.ros_helpers as ros_helpers
-from geometry_msgs.msg import TransformStamped, Transform
-from sensor_msgs.msg import Image, CameraInfo
-from spot_msgs.msg import WiFiState
+from geometry_msgs.msg import Transform
 from spot_msgs.msg import FootState, FootStateArray
 from bosdyn.api import image_pb2, geometry_pb2, robot_state_pb2
 from bosdyn.api.docking import docking_pb2

@@ -24,16 +24,16 @@ import tf2_geometry_msgs
 
 from spot_msgs.msg import Metrics
 from spot_msgs.msg import LeaseArray, LeaseResource
-from spot_msgs.msg import FootState, FootStateArray
-from spot_msgs.msg import EStopState, EStopStateArray
+from spot_msgs.msg import FootStateArray
+from spot_msgs.msg import EStopStateArray
 from spot_msgs.msg import WiFiState
 from spot_msgs.msg import PowerState
-from spot_msgs.msg import BehaviorFault, BehaviorFaultState
-from spot_msgs.msg import SystemFault, SystemFaultState
+from spot_msgs.msg import BehaviorFaultState
+from spot_msgs.msg import SystemFaultState
 from spot_msgs.msg import BatteryState, BatteryStateArray
 from spot_msgs.msg import PoseBodyAction, PoseBodyGoal, PoseBodyResult
 from spot_msgs.msg import Feedback
-from spot_msgs.msg import MobilityParams, ObstacleParams, TerrainParams
+from spot_msgs.msg import MobilityParams
 from spot_msgs.msg import NavigateToAction, NavigateToResult, NavigateToFeedback
 from spot_msgs.msg import (
     TrajectoryAction,
@@ -43,8 +43,8 @@ from spot_msgs.msg import (
 )
 from spot_msgs.srv import ListGraph, ListGraphResponse
 from spot_msgs.srv import SetLocomotion, SetLocomotionResponse
-from spot_msgs.srv import SetTerrainParams, SetTerrainParamsResponse
-from spot_msgs.srv import SetObstacleParams, SetObstacleParamsResponse
+from spot_msgs.srv import SetTerrainParams
+from spot_msgs.srv import SetObstacleParams
 from spot_msgs.srv import ClearBehaviorFault, ClearBehaviorFaultResponse
 from spot_msgs.srv import SetVelocity, SetVelocityResponse
 from spot_msgs.srv import Dock, DockResponse, GetDockState, GetDockStateResponse
@@ -60,11 +60,7 @@ from spot_msgs.srv import (
     GripperAngleMoveResponse,
     GripperAngleMoveRequest,
 )
-from spot_msgs.srv import (
-    ArmForceTrajectory,
-    ArmForceTrajectoryResponse,
-    ArmForceTrajectoryRequest,
-)
+from spot_msgs.srv import ArmForceTrajectory, ArmForceTrajectoryResponse
 from spot_msgs.srv import HandPose, HandPoseResponse, HandPoseRequest
 
 from spot_driver.ros_helpers import *
@@ -471,13 +467,13 @@ class SpotROS:
         resp = self.spot_wrapper.spot_estop_lease.assertEStop(True)
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_estop_soft(self, req) -> TriggerResponse:
+    def handle_estop_gentle(self, req) -> TriggerResponse:
         """ROS service handler to soft-eStop the robot.  The robot will try to settle on the ground before cutting
         power to the motors"""
         resp = self.spot_wrapper.spot_estop_lease.assertEStop(False)
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_estop_disengage(self, req) -> TriggerResponse:
+    def handle_estop_release(self, req) -> TriggerResponse:
         """ROS service handler to disengage the eStop on the robot."""
         resp = self.spot_wrapper.spot_estop_lease.disengageEStop()
         return TriggerResponse(resp[0], resp[1])
@@ -535,7 +531,7 @@ class SpotROS:
         except Exception as e:
             return SetSwingHeightResponse(False, "Error:{}".format(e))
 
-    def handle_vel_limit(self, req) -> SetVelocityResponse:
+    def handle_velocity_limit(self, req) -> SetVelocityResponse:
         """
         Handle a velocity_limit service call.
 
@@ -911,29 +907,29 @@ class SpotROS:
                     TrajectoryResult(False, "Failed to reach goal")
                 )
 
-    def handle_roll_over_right(self, req):
+    def handle_roll_over_right(self, req) -> TriggerResponse:
         """Robot sit down and roll on to it its side for easier battery access"""
         del req
         resp = self.spot_wrapper.battery_change_pose(1)
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_roll_over_left(self, req):
+    def handle_roll_over_left(self, req) -> TriggerResponse:
         """Robot sit down and roll on to it its side for easier battery access"""
         del req
         resp = self.spot_wrapper.battery_change_pose(2)
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_dock(self, req):
+    def handle_dock(self, req) -> DockResponse:
         """Dock the robot"""
         resp = self.spot_wrapper.spot_docking.dock(req.dock_id)
         return DockResponse(resp[0], resp[1])
 
-    def handle_undock(self, req):
+    def handle_undock(self, req) -> TriggerResponse:
         """Undock the robot"""
         resp = self.spot_wrapper.spot_docking.undock()
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_get_docking_state(self, req):
+    def handle_get_docking_state(self, req) -> GetDockStateResponse:
         """Get docking state of robot"""
         resp = self.spot_wrapper.spot_docking.get_docking_state()
         return GetDockStateResponse(GetDockStatesFromState(resp))
@@ -1070,7 +1066,7 @@ class SpotROS:
         mobility_params.body_control.CopyFrom(body_control)  # type: ignore
         self.spot_wrapper.set_mobility_params(mobility_params)
 
-    def handle_list_graph(self, upload_path):
+    def handle_list_graph(self, upload_path) -> ListGraphResponse:
         """ROS service handler for listing graph_nav waypoint_ids"""
         resp = self.spot_wrapper.spot_graph_nav.list_graph(upload_path)
         return ListGraphResponse(resp)
@@ -1175,51 +1171,55 @@ class SpotROS:
             )
 
     # Arm functions ##################################################
-    def handle_arm_stow(self, srv_data):
+    def handle_arm_stow(self, srv_data) -> TriggerResponse:
         """ROS service handler to command the arm to stow, home position"""
         resp = self.spot_wrapper.spot_arm.arm_stow()
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_arm_unstow(self, srv_data):
+    def handle_arm_unstow(self, srv_data) -> TriggerResponse:
         """ROS service handler to command the arm to unstow, joints are all zeros"""
         resp = self.spot_wrapper.spot_arm.arm_unstow()
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_arm_joint_move(self, srv_data: ArmJointMovementRequest):
+    def handle_arm_joint_move(
+        self, srv_data: ArmJointMovementRequest
+    ) -> ArmJointMovementResponse:
         """ROS service handler to send joint movement to the arm to execute"""
         resp = self.spot_wrapper.spot_arm.arm_joint_move(
             joint_targets=srv_data.joint_target
         )
         return ArmJointMovementResponse(resp[0], resp[1])
 
-    def handle_force_trajectory(self, srv_data):
+    def handle_force_trajectory(self, srv_data) -> ArmForceTrajectoryResponse:
         """ROS service handler to send a force trajectory up or down a vertical force"""
         resp = self.spot_wrapper.spot_arm.force_trajectory(data=srv_data)
         return ArmForceTrajectoryResponse(resp[0], resp[1])
 
-    def handle_gripper_open(self, srv_data):
+    def handle_gripper_open(self, srv_data) -> TriggerResponse:
         """ROS service handler to open the gripper"""
         resp = self.spot_wrapper.spot_arm.gripper_open()
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_gripper_close(self, srv_data):
+    def handle_gripper_close(self, srv_data) -> TriggerResponse:
         """ROS service handler to close the gripper"""
         resp = self.spot_wrapper.spot_arm.gripper_close()
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_gripper_angle_open(self, srv_data: GripperAngleMoveRequest):
+    def handle_gripper_angle_open(
+        self, srv_data: GripperAngleMoveRequest
+    ) -> GripperAngleMoveResponse:
         """ROS service handler to open the gripper at an angle"""
         resp = self.spot_wrapper.spot_arm.gripper_angle_open(
             gripper_ang=srv_data.gripper_angle
         )
         return GripperAngleMoveResponse(resp[0], resp[1])
 
-    def handle_arm_carry(self, srv_data):
+    def handle_arm_carry(self, srv_data) -> TriggerResponse:
         """ROS service handler to put arm in carry mode"""
         resp = self.spot_wrapper.spot_arm.arm_carry()
         return TriggerResponse(resp[0], resp[1])
 
-    def handle_hand_pose(self, srv_data: HandPoseRequest):
+    def handle_gripper_pose(self, srv_data: HandPoseRequest) -> HandPoseResponse:
         """ROS service to give a position to the gripper"""
         resp = self.spot_wrapper.spot_arm.hand_pose(pose_points=srv_data.pose_point)
         return HandPoseResponse(resp[0], resp[1])
@@ -1546,15 +1546,15 @@ class SpotROS:
         rospy.Service("power_off", Trigger, self.handle_safe_power_off)
 
         rospy.Service("estop/hard", Trigger, self.handle_estop_hard)
-        rospy.Service("estop/gentle", Trigger, self.handle_estop_soft)
-        rospy.Service("estop/release", Trigger, self.handle_estop_disengage)
+        rospy.Service("estop/gentle", Trigger, self.handle_estop_gentle)
+        rospy.Service("estop/release", Trigger, self.handle_estop_release)
 
         rospy.Service("allow_motion", SetBool, self.handle_allow_motion)
 
         rospy.Service("stair_mode", SetBool, self.handle_stair_mode)
         rospy.Service("locomotion_mode", SetLocomotion, self.handle_locomotion_mode)
         rospy.Service("swing_height", SetSwingHeight, self.handle_swing_height)
-        rospy.Service("velocity_limit", SetVelocity, self.handle_vel_limit)
+        rospy.Service("velocity_limit", SetVelocity, self.handle_velocity_limit)
         rospy.Service(
             "clear_behavior_fault", ClearBehaviorFault, self.handle_clear_behavior_fault
         )
@@ -1583,7 +1583,12 @@ class SpotROS:
         rospy.Service(
             "force_trajectory", ArmForceTrajectory, self.handle_force_trajectory
         )
-        rospy.Service("gripper_pose", HandPose, self.handle_hand_pose)
+        rospy.Service("gripper_pose", HandPose, self.handle_gripper_pose)
+
+        # Stop service calls other services so initialise it after them to prevent crashes which can happen if
+        # the service is immediately called
+        rospy.Service("stop", Trigger, self.handle_stop)
+        rospy.Service("locked_stop", Trigger, self.handle_locked_stop)
 
     def initialize_action_servers(self):
         #########################################################
@@ -1660,13 +1665,8 @@ class SpotROS:
 
         self.initialize_publishers()
         self.initialize_subscribers()
-        self.initialize_services()
         self.initialize_action_servers()
-
-        # Stop service calls other services so initialise it after them to prevent crashes which can happen if
-        # the service is immediately called
-        rospy.Service("stop", Trigger, self.handle_stop)
-        rospy.Service("locked_stop", Trigger, self.handle_locked_stop)
+        self.initialize_services()
 
         rospy.on_shutdown(self.shutdown)
 

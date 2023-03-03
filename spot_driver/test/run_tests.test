@@ -23,56 +23,8 @@
     <param name="max_angular_velocity_z" value="$(arg max_angular_velocity_z)"/>
     <param name="allow_motion" value="$(arg allow_motion)"/>
 
-    <!-- Remap topics to absolute names for testing purposes -->
     <remap from="joint_states" to="/joint_states"/>
     <remap from="tf" to="/tf"/>
-    <remap from="odometry/twist" to="/odometry/twist"/>
-    <remap from="odometry" to="/odometry"/>
-    <remap from="status/feet" to="/status/feet"/>
-    <remap from="status/estop" to="/status/estop"/>
-    <remap from="status/wifi" to="/status/wifi"/>
-    <remap from="status/battery_states" to="/status/battery_states"/>
-    <remap from="status/power_state" to="/status/power_state"/>
-    <remap from="status/system_faults" to="/status/system_faults"/>
-    <remap from="status/behavior_faults" to="/status/behavior_faults"/>
-    <remap from="status/metrics" to="/status/metrics"/>
-    <remap from="status/leases" to="/status/leases"/>
-    <remap from="status/feet" to="/status/feet"/>
-
-    <!-- Remap Image topics for testing purposes -->
-    <remap from="camera/hand_mono/image" to="/camera/hand_mono/image"/>
-    <remap from="camera/hand_mono/camera_info" to="/camera/hand_mono/camera_info"/>
-    <remap from="camera/hand_color/image" to="/camera/hand_color/image"/>
-    <remap from="camera/hand_color/camera_info" to="/camera/hand_color/camera_info"/>
-    <remap from="depth/hand/image" to="/depth/hand/image"/>
-    <remap from="depth/hand/camera_info" to="/depth/hand/camera_info"/>
-    <remap from="depth/hand/depth_in_color" to="/depth/hand/depth_in_color"/>
-    <remap from="camera/hand/depth_in_color/camera_info" to="/camera/hand/depth_in_color/camera_info"/>
-
-    <remap from="camera/frontleft/camera_info" to="/camera/frontleft/camera_info"/>
-    <remap from="camera/frontleft/image" to="/camera/frontleft/image"/>
-    <remap from="camera/frontright/camera_info" to="/camera/frontright/camera_info"/>
-    <remap from="camera/frontright/image" to="/camera/frontright/image"/>
-    <remap from="depth/frontleft/image" to="/depth/frontleft/image"/>
-    <remap from="depth/frontleft/camera_info" to="/depth/frontleft/camera_info"/>
-    <remap from="depth/frontright/image" to="/depth/frontright/image"/>
-
-    <remap from="camera/left/image" to="/camera/left/image"/>
-    <remap from="camera/left/camera_info" to="/camera/left/camera_info"/>
-    <remap from="camera/right/image" to="/camera/right/image"/>
-    <remap from="camera/right/camera_info" to="/camera/right/camera_info"/>
-    <remap from="depth/left/image" to="/depth/left/image"/>
-    <remap from="depth/left/camera_info" to="/depth/left/camera_info"/>
-    <remap from="depth/right/image" to="/depth/right/image"/>
-    <remap from="depth/right/camera_info" to="/depth/right/camera_info"/>
-
-    <remap from="camera/back/image" to="/camera/back/image"/>
-    <remap from="camera/back/camera_info" to="/camera/back/camera_info"/>
-    <remap from="depth/back/image" to="/depth/back/image"/>
-    <remap from="depth/back/camera_info" to="/depth/back/camera_info"/>
-
-    <remap from="claim" to="/claim"/>
-
   </node>
 
     <test test-name="spot_ros_tests" pkg="spot_driver" type="spot_ros_test.py"/>

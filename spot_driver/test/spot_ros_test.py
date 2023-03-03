@@ -3,38 +3,44 @@ PKG = "spot_ros"
 NAME = "spot_ros_test"
 SUITE = "spot_ros_test.TestSuiteSpotROS"
 
-import unittest
-from unittest.mock import MagicMock, patch
-import rospy
-from rosservice import get_service_class_by_name
-import rosservice
 import time
-import sys
+import unittest
 
-from std_srvs.srv import Trigger, TriggerResponse, SetBool, SetBoolResponse
-from bosdyn.api import image_pb2, robot_state_pb2, lease_pb2, geometry_pb2
-from google.protobuf import wrappers_pb2, timestamp_pb2, duration_pb2
-from bosdyn.client.frame_helpers import (
-    add_edge_to_tree,
-    VISION_FRAME_NAME,
-    BODY_FRAME_NAME,
-    ODOM_FRAME_NAME,
-)
+import rospy
+import actionlib
+from rosservice import get_service_class_by_name
+
+
+from spot_msgs.srv import PosedStandRequest
+from std_srvs.srv import TriggerResponse
+from bosdyn.api import robot_state_pb2, geometry_pb2
 
 from tf2_msgs.msg import TFMessage
 from sensor_msgs.msg import Image, CameraInfo
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import TwistWithCovarianceStamped, Twist, Pose, PoseStamped
+from geometry_msgs.msg import TwistWithCovarianceStamped
 from nav_msgs.msg import Odometry
+
 from spot_msgs.msg import Metrics
-from spot_msgs.msg import LeaseArray, LeaseResource
-from spot_msgs.msg import FootState, FootStateArray
-from spot_msgs.msg import EStopState, EStopStateArray
+from spot_msgs.msg import LeaseArray
+from spot_msgs.msg import FootStateArray
+from spot_msgs.msg import EStopStateArray
 from spot_msgs.msg import WiFiState
 from spot_msgs.msg import PowerState
-from spot_msgs.msg import BehaviorFault, BehaviorFaultState
-from spot_msgs.msg import SystemFault, SystemFaultState
-from spot_msgs.msg import BatteryState, BatteryStateArray
+from spot_msgs.msg import BehaviorFaultState
+from spot_msgs.msg import SystemFaultState
+from spot_msgs.msg import BatteryStateArray
+
+from spot_msgs.srv import ListGraphResponse
+from spot_msgs.srv import (
+    DockResponse,
+    GetDockStateResponse,
+    DockRequest,
+)
+from spot_msgs.srv import GripperAngleMoveResponse
+from spot_msgs.srv import ArmForceTrajectoryResponse
+from spot_msgs.srv import ArmJointMovementResponse
+from spot_msgs.srv import HandPoseResponse
 
 
 class TestRobotStateCB(unittest.TestCase):
@@ -435,21 +441,25 @@ class TestRobotStateCB(unittest.TestCase):
         )
         self.tf = rospy.Subscriber("tf", TFMessage, self.tf_cb)
         self.twist_odom = rospy.Subscriber(
-            "odometry/twist", TwistWithCovarianceStamped, self.twist_odom_cb
+            "/spot/odometry/twist", TwistWithCovarianceStamped, self.twist_odom_cb
         )
-        self.odom = rospy.Subscriber("odometry", Odometry, self.odom_cb)
-        self.feet = rospy.Subscriber("status/feet", FootStateArray, self.foot_cb)
-        self.estop = rospy.Subscriber("status/estop", EStopStateArray, self.estop_cb)
-        self.wifi = rospy.Subscriber("status/wifi", WiFiState, self.wifi_cb)
+        self.odom = rospy.Subscriber("/spot/odometry", Odometry, self.odom_cb)
+        self.feet = rospy.Subscriber("/spot/status/feet", FootStateArray, self.foot_cb)
+        self.estop = rospy.Subscriber(
+            "/spot/status/estop", EStopStateArray, self.estop_cb
+        )
+        self.wifi = rospy.Subscriber("/spot/status/wifi", WiFiState, self.wifi_cb)
         self.battery = rospy.Subscriber(
-            "status/battery_states", BatteryStateArray, self.battery_cb
+            "/spot/status/battery_states", BatteryStateArray, self.battery_cb
         )
-        self.power = rospy.Subscriber("status/power_state", PowerState, self.power_cb)
+        self.power = rospy.Subscriber(
+            "/spot/status/power_state", PowerState, self.power_cb
+        )
         self.system_fault = rospy.Subscriber(
-            "status/system_faults", SystemFaultState, self.system_fault_cb
+            "/spot/status/system_faults", SystemFaultState, self.system_fault_cb
         )
         self.behaviour_fault = rospy.Subscriber(
-            "status/behavior_faults", BehaviorFaultState, self.behaviour_fault_cb
+            "/spot/status/behavior_faults", BehaviorFaultState, self.behaviour_fault_cb
         )
 
         counter = 0
@@ -504,7 +514,9 @@ class TestMetricsCB(unittest.TestCase):
         self.assertEqual(metrics.electric_power.nsecs, 8)
 
     def test_metrics_cb(self):
-        self.metrics = rospy.Subscriber("status/metrics", Metrics, self.metrics_cb)
+        self.metrics = rospy.Subscriber(
+            "/spot/status/metrics", Metrics, self.metrics_cb
+        )
 
         counter = 0
         while not rospy.is_shutdown() and counter < 10:
@@ -534,7 +546,7 @@ class TestLeaseCB(unittest.TestCase):
         self.assertEqual(lease.resources[0].lease_owner.user_name, "Dylan")
 
     def test_lease_cb(self):
-        self.lease = rospy.Subscriber("status/leases", LeaseArray, self.lease_cb)
+        self.lease = rospy.Subscriber("/spot/status/leases", LeaseArray, self.lease_cb)
 
         counter = 0
         while not rospy.is_shutdown() and counter < 10:
@@ -639,30 +651,34 @@ class TestHandImageCB(unittest.TestCase):
 
     def test_hand_image_cb(self):
         self.hand_image_mono = rospy.Subscriber(
-            "camera/hand_mono/image", Image, self.hand_image_mono_cb
+            "/spot/camera/hand_mono/image", Image, self.hand_image_mono_cb
         )
         self.hand_image_color = rospy.Subscriber(
-            "camera/hand_color/image", Image, self.hand_image_color_cb
+            "/spot/camera/hand_color/image", Image, self.hand_image_color_cb
         )
         self.hand_depth = rospy.Subscriber(
-            "depth/hand/image", Image, self.hand_depth_cb
+            "/spot/depth/hand/image", Image, self.hand_depth_cb
         )
         self.hand_depth_in_hand_color = rospy.Subscriber(
-            "depth/hand/depth_in_color", Image, self.hand_depth_in_hand_color_cb
+            "/spot/depth/hand/depth_in_color", Image, self.hand_depth_in_hand_color_cb
         )
 
         self.hand_image_mono_info = rospy.Subscriber(
-            "camera/hand_mono/camera_info", CameraInfo, self.hand_image_mono_info_cb
+            "/spot/camera/hand_mono/camera_info",
+            CameraInfo,
+            self.hand_image_mono_info_cb,
         )
         self.hand_image_color_info = rospy.Subscriber(
-            "camera/hand_color/camera_info", CameraInfo, self.hand_image_color_info_cb
+            "/spot/camera/hand_color/camera_info",
+            CameraInfo,
+            self.hand_image_color_info_cb,
         )
 
         self.hand_depth_info = rospy.Subscriber(
-            "depth/hand/camera_info", CameraInfo, self.hand_depth_info_cb
+            "/spot/depth/hand/camera_info", CameraInfo, self.hand_depth_info_cb
         )
         self.hand_depth_in_color_info = rospy.Subscriber(
-            "camera/hand/depth_in_color/camera_info",
+            "/spot/camera/hand/depth_in_color/camera_info",
             CameraInfo,
             self.hand_depth_in_color_info_cb,
         )
@@ -703,6 +719,271 @@ class TestHandImageCB(unittest.TestCase):
         self.check_hand_image_info_depth_in_color(self.data["hand_depth_in_color_info"])
 
 
+class TestServiceHandlers(unittest.TestCase):
+    def call_service(self, service_name, *args, **kwargs):
+        # Call a service and wait for it to be available
+        try:
+            rospy.wait_for_service(service_name)
+            service_type = get_service_class_by_name(service_name)
+            proxy = rospy.ServiceProxy(service_name, service_type)
+            return proxy(*args, **kwargs)
+
+        except rospy.ServiceException as e:
+            print("Service call failed: %s" % e)
+
+    def test_claim_service(self):
+        # Test that the claim service works
+        resp: TriggerResponse = self.call_service("/spot/claim")
+
+        self.assertTrue(resp.success, "Claim service failed")
+        self.assertEqual(resp.message, "Successfully called claim")
+
+    def test_release_service(self):
+        # Test that the release service works
+        resp: TriggerResponse = self.call_service("/spot/release")
+
+        self.assertTrue(resp.success, "Release service failed")
+        self.assertEqual(resp.message, "Successfully called release")
+
+    def test_locked_stop(self):
+        # Test that the locked stop service works
+        resp: TriggerResponse = self.call_service("/spot/locked_stop")
+
+        self.assertTrue(resp.success, "Locked stop service failed")
+        self.assertEqual(resp.message, "Successfully called locked_stop")
+
+    def test_stop(self):
+        # Test that the stop service works
+        resp: TriggerResponse = self.call_service("/spot/stop")
+
+        self.assertTrue(resp.success, "Stop service failed")
+        self.assertEqual(resp.message, "Successfully called stop")
+
+    def test_self_right(self):
+        # Test that the self right service works
+        resp: TriggerResponse = self.call_service("/spot/self_right")
+
+        self.assertTrue(resp.success, "Self right service failed")
+        self.assertEqual(resp.message, "Successfully called self_right")
+
+    def test_sit(self):
+        # Test that the sit service works
+        resp: TriggerResponse = self.call_service("/spot/sit")
+
+        self.assertTrue(resp.success, "Sit service failed")
+        self.assertEqual(resp.message, "Successfully called sit")
+
+    def test_stand(self):
+        # Test that the stand service works
+        resp: TriggerResponse = self.call_service("/spot/stand")
+
+        self.assertTrue(resp.success, "Stand service failed")
+        self.assertEqual(resp.message, "Successfully called stand")
+
+    def test_posed_stand(self):
+        # Test that the posed stand service works
+        resp = self.call_service("/spot/posed_stand", PosedStandRequest())
+
+        self.assertTrue(resp.success, "Posed stand service failed")
+        self.assertEqual(resp.message, "Successfully called posed_stand")
+
+    def test_power_on(self):
+        # Test that the power on service works
+        resp: TriggerResponse = self.call_service("/spot/power_on")
+
+        self.assertTrue(resp.success, "Power on service failed")
+        self.assertEqual(resp.message, "Successfully called power_on")
+
+    def test_safe_power_off(self):
+        # Test that the safe power off service works
+        resp: TriggerResponse = self.call_service("/spot/power_off")
+
+        self.assertTrue(resp.success, "Safe power off service failed")
+        self.assertEqual(resp.message, "Successfully called safe_power_off")
+
+    def test_estop_hard(self):
+        # Test that the estop hard service works
+        resp: TriggerResponse = self.call_service("/spot/estop/hard")
+
+        self.assertTrue(resp.success, "Estop hard service failed")
+        self.assertEqual(resp.message, "Successfully called estop_hard")
+
+    def test_estop_gentle(self):
+        # Test that the estop soft service works
+        resp: TriggerResponse = self.call_service("/spot/estop/gentle")
+
+        self.assertTrue(resp.success, "Estop gentle service failed")
+        self.assertEqual(resp.message, "Successfully called estop_gentle")
+
+    def test_estop_release(self):
+        # Test that the estop release service works
+        resp: TriggerResponse = self.call_service("/spot/estop/release")
+
+        self.assertTrue(resp.success, "Estop release service failed")
+        self.assertEqual(resp.message, "Successfully called estop_release")
+
+    def test_clear_behavior_fault(self):
+        # Test that the clear behavior fault service works
+        resp: TriggerResponse = self.call_service("/spot/clear_behavior_fault")
+
+        self.assertTrue(resp.success, "Clear behavior fault service failed")
+        self.assertEqual(resp.message, "Successfully called clear_behavior_fault")
+
+    def test_stair_mode(self):
+        # Test that the stair mode service works
+        resp: TriggerResponse = self.call_service("/spot/stair_mode", True)
+
+        self.assertTrue(resp.success, "Stair mode service failed")
+        self.assertEqual(resp.message, "Successfully called stair_mode")
+
+    def test_locomotion_mode(self):
+        # Test that the locomotion mode service works
+        resp: TriggerResponse = self.call_service("/spot/locomotion_mode")
+
+        self.assertTrue(resp.success, "Locomotion mode service failed")
+        self.assertEqual(resp.message, "Successfully called locomotion_mode")
+
+    def test_swing_height(self):
+        # Test that the swing height service works
+        resp: TriggerResponse = self.call_service("/spot/swing_height")
+
+        self.assertTrue(resp.success, "Swing height service failed")
+        self.assertEqual(resp.message, "Successfully called swing_height")
+
+    def test_velocity_limit(self):
+        # Test that the vel limit service works
+        resp: TriggerResponse = self.call_service("/spot/velocity_limit")
+
+        self.assertTrue(resp.success, "Velocity limit service failed")
+        self.assertEqual(resp.message, "Successfully called velocity_limit")
+
+    def test_allow_motion(self):
+        # Test that the allow motion service works
+        resp: TriggerResponse = self.call_service("/spot/allow_motion", True)
+
+        self.assertTrue(resp.success, "Allow motion service failed")
+        self.assertEqual(resp.message, "Successfully called allow_motion")
+
+    def test_obstacle_params(self):
+        # Test that the obstacle params service works
+        resp: TriggerResponse = self.call_service("/spot/obstacle_params")
+
+        self.assertTrue(resp.success, "Obstacle params service failed")
+        self.assertEqual(resp.message, "Successfully called obstacle_params")
+
+    def test_terrain_params(self):
+        # Test that the terrain params service works
+        resp: TriggerResponse = self.call_service("/spot/terrain_params")
+
+        self.assertTrue(resp.success, "Terrain params service failed")
+        self.assertEqual(resp.message, "Successfully called terrain_params")
+
+    def test_list_graph(self):
+        # Test that the list graph service works
+        resp: ListGraphResponse = self.call_service(
+            "/spot/list_graph", "test_file/path"
+        )
+
+        self.assertTrue(resp.waypoint_ids, ["1", "2", "3"])
+
+    def test_roll_over_right(self):
+        # Test that the roll over right service works
+        resp: TriggerResponse = self.call_service("/spot/roll_over_right")
+
+        self.assertTrue(resp.success, "Roll over right service failed")
+        self.assertEqual(resp.message, "Successfully called roll_over_right")
+
+    def test_roll_over_left(self):
+        # Test that the roll over left service works
+        resp: TriggerResponse = self.call_service("/spot/roll_over_left")
+
+        self.assertTrue(resp.success, "Roll over left service failed")
+        self.assertEqual(resp.message, "Successfully called roll_over_left")
+
+    def test_dock(self):
+        # Test that the dock service works
+        resp: DockResponse = self.call_service("/spot/dock", DockRequest(dock_id=1))
+
+        self.assertTrue(resp.success, "Dock service failed")
+        self.assertEqual(resp.message, "Successfully called dock")
+
+    def test_undock(self):
+        # Test that the undock service works
+        resp: TriggerResponse = self.call_service("/spot/undock")
+
+        self.assertTrue(resp.success, "Undock service failed")
+        self.assertEqual(resp.message, "Successfully called undock")
+
+    def test_get_docking_state(self):
+        # Test that the get docking state service works
+        resp: GetDockStateResponse = self.call_service("/spot/docking_state")
+
+        self.assertTrue(resp.dock_state, "Get docking state service failed")
+
+    def test_arm_stow(self):
+        # Test that the arm stow service works
+        resp: TriggerResponse = self.call_service("/spot/arm_stow")
+
+        self.assertTrue(resp.success, "Arm stow service failed")
+        self.assertEqual(resp.message, "Successfully called arm_stow")
+
+    def test_arm_unstow(self):
+        # Test that the arm unstow service works
+        resp: TriggerResponse = self.call_service("/spot/arm_unstow")
+
+        self.assertTrue(resp.success, "Arm unstow service failed")
+        self.assertEqual(resp.message, "Successfully called arm_unstow")
+
+    def test_gripper_open(self):
+        # Test that the gripper open service works
+        resp: TriggerResponse = self.call_service("/spot/gripper_open")
+
+        self.assertTrue(resp.success, "Gripper open service failed")
+        self.assertEqual(resp.message, "Successfully called gripper_open")
+
+    def test_gripper_close(self):
+        # Test that the gripper close service works
+        resp: TriggerResponse = self.call_service("/spot/gripper_close")
+
+        self.assertTrue(resp.success, "Gripper close service failed")
+        self.assertEqual(resp.message, "Successfully called gripper_close")
+
+    def test_arm_carry(self):
+        # Test that the arm carry service works
+        resp: TriggerResponse = self.call_service("/spot/arm_carry")
+
+        self.assertTrue(resp.success, "Arm carry service failed")
+        self.assertEqual(resp.message, "Successfully called arm_carry")
+
+    def test_gripper_angle_open(self):
+        # Test that the gripper angle opens service works
+        resp: GripperAngleMoveResponse = self.call_service("/spot/gripper_angle_open")
+
+        self.assertTrue(resp.success, "Gripper angle opens service failed")
+        self.assertEqual(resp.message, "Successfully called gripper_angle_open")
+
+    def test_arm_joint_move(self):
+        # Test that the arm joint move service works
+        resp: ArmJointMovementResponse = self.call_service("/spot/arm_joint_move")
+
+        self.assertTrue(resp.success, "Arm joint move service failed")
+        self.assertEqual(resp.message, "Successfully called arm_joint_move")
+
+    def test_force_trajectory(self):
+        # Test that the force trajectory service works
+        resp: ArmForceTrajectoryResponse = self.call_service("/spot/force_trajectory")
+
+        self.assertTrue(resp.success, "Force trajectory service failed")
+        self.assertEqual(resp.message, "Successfully called force_trajectory")
+
+    def test_gripper_pose(self):
+        # Test that the hand pose service works
+        resp: HandPoseResponse = self.call_service("/spot/gripper_pose")
+
+        self.assertTrue(resp.success, "Hand pose service failed")
+        self.assertEqual(resp.message, "Successfully called gripper_pose")
+
+
 # Test suite for SpotROS
 class TestSuiteSpotROS(unittest.TestSuite):
     def __init__(self):
@@ -712,17 +993,19 @@ class TestSuiteSpotROS(unittest.TestSuite):
         self.addTest(self.loader.loadTestsFromTestCase(TestMetricsCB))
         self.addTest(self.loader.loadTestsFromTestCase(TestLeaseCB))
         self.addTest(self.loader.loadTestsFromTestCase(TestHandImageCB))
+        self.addTest(self.loader.loadTestsFromTestCase(TestServiceHandlers))
 
 
 if __name__ == "__main__":
     print("Starting tests!")
     import rosunit
 
-    rospy.init_node(NAME)
+    rospy.init_node(NAME, anonymous=True)
 
     rosunit.unitrun(PKG, NAME, TestRobotStateCB)
     rosunit.unitrun(PKG, NAME, TestMetricsCB)
     rosunit.unitrun(PKG, NAME, TestLeaseCB)
     rosunit.unitrun(PKG, NAME, TestHandImageCB)
+    rosunit.unitrun(PKG, NAME, TestServiceHandlers)
 
     print("Tests complete!")
