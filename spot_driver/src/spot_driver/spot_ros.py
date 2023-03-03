@@ -34,7 +34,12 @@ from spot_msgs.msg import BatteryState, BatteryStateArray
 from spot_msgs.msg import PoseBodyAction, PoseBodyGoal, PoseBodyResult
 from spot_msgs.msg import Feedback
 from spot_msgs.msg import MobilityParams
-from spot_msgs.msg import NavigateToAction, NavigateToResult, NavigateToFeedback
+from spot_msgs.msg import (
+    NavigateToAction,
+    NavigateToResult,
+    NavigateToFeedback,
+    NavigateToGoal,
+)
 from spot_msgs.msg import (
     TrajectoryAction,
     TrajectoryResult,
@@ -990,7 +995,7 @@ class SpotROS:
 
         self._set_in_motion_or_idle_body_pose(data)
 
-    def handle_in_motion_or_idle_body_pose(self, goal):
+    def handle_in_motion_or_idle_body_pose(self, goal: PoseBodyGoal):
         """
         Handle a goal received from the pose body actionserver
 
@@ -1083,8 +1088,7 @@ class SpotROS:
                 )
             rospy.Rate(10).sleep()
 
-    def handle_navigate_to(self, msg):
-        """ROS service handler to run mission of the robot.  The robot will replay a mission"""
+    def handle_navigate_to(self, msg: NavigateToGoal):
         if not self.robot_allowed_to_move():
             rospy.logerr("navigate_to was requested but robot is not allowed to move.")
             self.navigate_as.set_aborted(

@@ -9,6 +9,9 @@ from spot_msgs.srv import SetLocomotionResponse
 from spot_msgs.srv import SetSwingHeightResponse
 from spot_msgs.srv import SetVelocityResponse
 from spot_msgs.msg import MobilityParams
+from spot_msgs.msg import NavigateToGoal, NavigateToResult
+from spot_msgs.msg import TrajectoryResult, TrajectoryGoal
+from spot_msgs.msg import PoseBodyAction, PoseBodyGoal, PoseBodyResult
 from spot_msgs.srv import ListGraphResponse
 from spot_msgs.srv import DockResponse, GetDockStateResponse
 from spot_msgs.srv import GripperAngleMoveResponse, GripperAngleMoveRequest
@@ -272,6 +275,28 @@ class TestSpotROS(SpotROS):
     def handle_gripper_pose(self, srv_data: HandPoseRequest) -> HandPoseResponse:
         return HandPoseResponse(
             success=True, message="Successfully called gripper_pose"
+        )
+
+    def handle_navigate_to(self, msg: NavigateToGoal):
+        self.navigate_as.set_succeeded(
+            NavigateToResult(success=True, message="Successfully called navigate_to")
+        )
+
+    def handle_trajectory(self, msg: TrajectoryGoal):
+        self.trajectory_server.set_succeeded(
+            TrajectoryResult(success=True, message="Successfully called trajectory")
+        )
+
+    def handle_in_motion_or_idle_body_pose(self, goal: PoseBodyGoal):
+        self.motion_or_idle_body_pose_as.set_succeeded(
+            PoseBodyResult(
+                success=True, message="Successfully called motion_or_idle_body_pose"
+            )
+        )
+
+    def handle_posed_stand_action(self, goal: PoseBodyGoal):
+        self.body_pose_as.set_succeeded(
+            PoseBodyResult(success=True, message="Successfully called body_pose")
         )
 
 

@@ -12,13 +12,14 @@ from rosservice import get_service_class_by_name
 
 
 from spot_msgs.srv import PosedStandRequest
+from std_msgs.msg import Duration
 from std_srvs.srv import TriggerResponse
 from bosdyn.api import robot_state_pb2, geometry_pb2
 
 from tf2_msgs.msg import TFMessage
 from sensor_msgs.msg import Image, CameraInfo
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import TwistWithCovarianceStamped
+from geometry_msgs.msg import TwistWithCovarianceStamped, PoseStamped, Pose, Point
 from nav_msgs.msg import Odometry
 
 from spot_msgs.msg import Metrics
@@ -41,6 +42,20 @@ from spot_msgs.srv import GripperAngleMoveResponse
 from spot_msgs.srv import ArmForceTrajectoryResponse
 from spot_msgs.srv import ArmJointMovementResponse
 from spot_msgs.srv import HandPoseResponse
+
+from spot_msgs.msg import (
+    NavigateToAction,
+    NavigateToResult,
+    NavigateToFeedback,
+    NavigateToGoal,
+)
+from spot_msgs.msg import (
+    TrajectoryAction,
+    TrajectoryResult,
+    TrajectoryFeedback,
+    TrajectoryGoal,
+)
+from spot_msgs.msg import PoseBodyAction, PoseBodyGoal, PoseBodyResult
 
 
 class TestRobotStateCB(unittest.TestCase):
@@ -984,6 +999,80 @@ class TestServiceHandlers(unittest.TestCase):
         self.assertEqual(resp.message, "Successfully called gripper_pose")
 
 
+class TestActionHandlers(unittest.TestCase):
+    def test_navigate_to_action(self):
+        self.navigate_to_action_client = actionlib.SimpleActionClient(
+            "/spot/navigate_to", NavigateToAction
+        )
+        self.navigate_to_action_client.wait_for_server()
+
+        goal = NavigateToGoal()
+        goal.upload_path = "test_file/path"
+        goal.navigate_to = "1"
+        goal.initial_localization_fiducial = False
+        goal.initial_localization_waypoint = "waypoint1"
+
+        self.navigate_to_action_client.send_goal(goal)
+        self.navigate_to_action_client.wait_for_result()
+
+        result = self.navigate_to_action_client.get_result()
+
+        self.assertEqual(result.message, "Successfully called navigate_to")
+        self.assertTrue(result.success, "Navigate to action failed")
+
+    def test_trajectory_action(self):
+        self.trajectory_action_client = actionlib.SimpleActionClient(
+            "/spot/trajectory", TrajectoryAction
+        )
+        self.trajectory_action_client.wait_for_server()
+
+        goal = TrajectoryGoal()
+        goal.target_pose = PoseStamped(pose=Pose(position=Point(x=1, y=1, z=1)))
+        goal.duration = Duration(rospy.Duration(10))
+
+        self.trajectory_action_client.send_goal(goal)
+        self.trajectory_action_client.wait_for_result()
+
+        result = self.trajectory_action_client.get_result()
+
+        self.assertEqual(result.message, "Successfully called trajectory")
+        self.assertTrue(result.success, "Trajectory action failed")
+
+    def test_motion_or_idle_body_pose_action(self):
+        self.motion_or_idle_body_pose_action_client = actionlib.SimpleActionClient(
+            "/spot/motion_or_idle_body_pose", PoseBodyAction
+        )
+        self.motion_or_idle_body_pose_action_client.wait_for_server()
+
+        goal = PoseBodyGoal()
+        goal.body_pose = Pose(position=Point(x=1, y=1, z=1))
+
+        self.motion_or_idle_body_pose_action_client.send_goal(goal)
+        self.motion_or_idle_body_pose_action_client.wait_for_result()
+
+        result = self.motion_or_idle_body_pose_action_client.get_result()
+
+        self.assertEqual(result.message, "Successfully called motion_or_idle_body_pose")
+        self.assertTrue(result.success, "Motion or idle body pose action failed")
+
+    def test_body_pose(self):
+        self.body_pose_action_client = actionlib.SimpleActionClient(
+            "/spot/body_pose", PoseBodyAction
+        )
+        self.body_pose_action_client.wait_for_server()
+
+        goal = PoseBodyGoal()
+        goal.body_pose = Pose(position=Point(x=1, y=1, z=1))
+
+        self.body_pose_action_client.send_goal(goal)
+        self.body_pose_action_client.wait_for_result()
+
+        result = self.body_pose_action_client.get_result()
+
+        self.assertEqual(result.message, "Successfully called body_pose")
+        self.assertTrue(result.success, "Body pose action failed")
+
+
 # Test suite for SpotROS
 class TestSuiteSpotROS(unittest.TestSuite):
     def __init__(self):
@@ -1002,10 +1091,14 @@ if __name__ == "__main__":
 
     rospy.init_node(NAME, anonymous=True)
 
-    rosunit.unitrun(PKG, NAME, TestRobotStateCB)
-    rosunit.unitrun(PKG, NAME, TestMetricsCB)
-    rosunit.unitrun(PKG, NAME, TestLeaseCB)
-    rosunit.unitrun(PKG, NAME, TestHandImageCB)
-    rosunit.unitrun(PKG, NAME, TestServiceHandlers)
+    """
+        rosunit.unitrun(PKG, NAME, TestRobotStateCB)
+        rosunit.unitrun(PKG, NAME, TestMetricsCB)
+        rosunit.unitrun(PKG, NAME, TestLeaseCB)
+        rosunit.unitrun(PKG, NAME, TestHandImageCB)
+        rosunit.unitrun(PKG, NAME, TestServiceHandlers)
+
+    """
+    rosunit.unitrun(PKG, NAME, TestActionHandlers)
 
     print("Tests complete!")
