@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import rospy
+import typing
+
+from std_srvs.srv import Trigger, TriggerResponse, SetBool, SetBoolResponse
 
 from bosdyn.api import image_pb2, robot_state_pb2, lease_pb2, geometry_pb2
 from bosdyn.client.async_tasks import AsyncPeriodicQuery, AsyncTasks
@@ -22,6 +25,11 @@ class TestSpotWrapper(SpotWrapper):
         self._robot_state = robot_state_pb2.RobotState()
         self._metrics = robot_state_pb2.RobotMetrics()
         self._lease_list = lease_pb2.ListLeasesResponse()
+        self._front_image = [image_pb2.ImageResponse()]
+        self._side_image = [image_pb2.ImageResponse()]
+        self._rear_image = [image_pb2.ImageResponse()]
+        self._hand_image = [image_pb2.ImageResponse()]
+
         self._valid = True
         self._robot_params = {
             "is_standing": False,
@@ -40,42 +48,87 @@ class TestSpotWrapper(SpotWrapper):
 
     @property
     def robot_state(self) -> robot_state_pb2.RobotState:
-        """Return latest proto from the _robot_state_task"""
+        """Return latest  _robot_state data"""
         return self._robot_state
 
     @robot_state.setter
     def robot_state(self, robot_state: robot_state_pb2.RobotState):
-        """Set the robot_state_task proto"""
+        """Set the robot_state_task data"""
         self._robot_state = robot_state
 
     @property
     def metrics(self) -> robot_state_pb2.RobotMetrics:
-        """Return latest proto from the _robot_metrics_task"""
+        """Return latest _robot_metrics data"""
         return self._metrics
 
     @metrics.setter
     def metrics(self, robot_metrics: robot_state_pb2.RobotMetrics):
-        """Set the robot_metrics_task proto"""
+        """Set the _robot_metrics data"""
         self._metrics = robot_metrics
 
     @property
     def lease(self) -> lease_pb2.ListLeasesResponse:
-        """Return latest proto from the _lease_task"""
+        """Return latest _lease_list data"""
         return self._lease_list
 
     @lease.setter
     def lease(self, lease_list: lease_pb2.ListLeasesResponse):
-        """Set the lease_task proto"""
+        """Set the _lease_list data"""
         self._lease_list = lease_list
+
+    @property
+    def front_images(self) -> typing.List[image_pb2.ImageResponse]:
+        """Return latest _front_image data"""
+        return self._front_image
+
+    @front_images.setter
+    def front_images(self, front_image: typing.List[image_pb2.ImageResponse]):
+        """Set the _front_image data"""
+        self._front_image = front_image
+
+    @property
+    def side_images(self) -> typing.List[image_pb2.ImageResponse]:
+        """Return latest _side_image data"""
+        return self._side_image
+
+    @side_images.setter
+    def side_images(self, side_image: typing.List[image_pb2.ImageResponse]):
+        """Set the _side_image data"""
+        self._side_image = side_image
+
+    @property
+    def rear_images(self) -> typing.List[image_pb2.ImageResponse]:
+        """Return latest _rear_image data"""
+        return self._rear_image
+
+    @rear_images.setter
+    def rear_images(self, rear_image: typing.List[image_pb2.ImageResponse]):
+        """Set the _rear_image data"""
+        self._rear_image = rear_image
+
+    @property
+    def hand_images(self) -> typing.List[image_pb2.ImageResponse]:
+        """Return latest _hand_image data"""
+        return self._hand_image
+
+    @hand_images.setter
+    def hand_images(self, hand_image: typing.List[image_pb2.ImageResponse]):
+        """Set the _hand_image data"""
+        self._hand_image = hand_image
 
     def disconnect(self):
         pass
 
 
+class TestSpotROS(SpotROS):
+    def handle_claim(self, req):
+        return TriggerResponse(success=True, message="Success")
+
+
 # Run the mock SpotROS class as a node
 class MockSpotROS:
     def __init__(self):
-        self.spot_ros = SpotROS()
+        self.spot_ros = TestSpotROS()
         self.spot_ros.node_name = "mock_spot_ros"
         self.spot_ros.spot_wrapper = TestSpotWrapper()
 
@@ -341,24 +394,192 @@ class MockSpotROS:
 
         self.spot_ros.spot_wrapper.lease = list_lease_resp.resources  # type: ignore
 
+    def set_robot_front_camera_data(self):
+        # Create a robot front camera data message inside the spot_wrapper object
+        self.spot_ros.spot_wrapper.front_images = []
+
+        # Populate the front camera data message field with a timestamp and image
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 480
+        image_response.shot.image.rows = 640
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = (
+            image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
+        )
+        image_response.shot.frame_name_image_sensor = "frontleft_fisheye_image"
+        self.spot_ros.spot_wrapper.front_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 480
+        image_response.shot.image.rows = 640
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = (
+            image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
+        )
+        image_response.shot.frame_name_image_sensor = "frontright_fisheye_image"
+        self.spot_ros.spot_wrapper.front_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 240
+        image_response.shot.image.rows = 424
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = image_pb2.Image.PIXEL_FORMAT_DEPTH_U16
+        image_response.shot.frame_name_image_sensor = "frontleft_depth"
+        self.spot_ros.spot_wrapper.front_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 240
+        image_response.shot.image.rows = 424
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = image_pb2.Image.PIXEL_FORMAT_DEPTH_U16
+        image_response.shot.frame_name_image_sensor = "frontright_depth"
+        self.spot_ros.spot_wrapper.front_images.append(image_response)
+
+    def set_robot_rear_camera_data(self):
+        # Create a robot rear camera data message inside the spot_wrapper object
+        self.spot_ros.spot_wrapper.rear_images = []
+
+        # Populate the rear camera data message field with a timestamp and image
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 640
+        image_response.shot.image.rows = 480
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = (
+            image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
+        )
+        image_response.shot.frame_name_image_sensor = "back_fisheye_image"
+        self.spot_ros.spot_wrapper.rear_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 424
+        image_response.shot.image.rows = 240
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = image_pb2.Image.PIXEL_FORMAT_DEPTH_U16
+        image_response.shot.frame_name_image_sensor = "back_depth"
+        self.spot_ros.spot_wrapper.rear_images.append(image_response)
+
+    def set_robot_side_camera_data(self):
+        # Create a robot left camera data message inside the spot_wrapper object
+        self.spot_ros.spot_wrapper.side_images = []
+
+        # Populate the left camera data message field with a timestamp and image
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 480
+        image_response.shot.image.rows = 640
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = (
+            image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
+        )
+        image_response.shot.frame_name_image_sensor = "left_fisheye_image"
+        self.spot_ros.spot_wrapper.side_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 240
+        image_response.shot.image.rows = 424
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = image_pb2.Image.PIXEL_FORMAT_DEPTH_U16
+        image_response.shot.frame_name_image_sensor = "left_depth"
+        self.spot_ros.spot_wrapper.side_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 480
+        image_response.shot.image.rows = 640
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = (
+            image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
+        )
+        image_response.shot.frame_name_image_sensor = "right_fisheye_image"
+        self.spot_ros.spot_wrapper.side_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 240
+        image_response.shot.image.rows = 424
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = image_pb2.Image.PIXEL_FORMAT_DEPTH_U16
+        image_response.shot.frame_name_image_sensor = "right_depth"
+        self.spot_ros.spot_wrapper.side_images.append(image_response)
+
+    def set_hand_camera_data(self):
+        # Create a hand camera data message inside the spot_wrapper object
+        self.spot_ros.spot_wrapper.hand_images = []
+
+        # Populate the hand camera data message field with a timestamp and image
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 480
+        image_response.shot.image.rows = 640
+        image_response.shot.image.data = b"hand_image"
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = (
+            image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
+        )
+        image_response.shot.frame_name_image_sensor = "hand_image"
+        self.spot_ros.spot_wrapper.hand_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 240
+        image_response.shot.image.rows = 424
+        image_response.shot.image.data = b"hand_depth"
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = image_pb2.Image.PIXEL_FORMAT_DEPTH_U16
+        image_response.shot.frame_name_image_sensor = "hand_depth"
+        self.spot_ros.spot_wrapper.hand_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 480
+        image_response.shot.image.rows = 640
+        image_response.shot.image.data = b"hand_color_image"
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = image_pb2.Image.PIXEL_FORMAT_RGB_U8
+        image_response.shot.frame_name_image_sensor = "hand_color_image"
+        self.spot_ros.spot_wrapper.hand_images.append(image_response)
+
+        image_response = image_pb2.ImageResponse()
+        image_response.shot.image.cols = 480
+        image_response.shot.image.rows = 640
+        image_response.shot.image.data = b"hand_depth_in_color_frame"
+        image_response.shot.image.format = image_pb2.Image.FORMAT_RAW
+        image_response.shot.image.pixel_format = (
+            image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
+        )
+        image_response.shot.frame_name_image_sensor = "hand_depth_in_color_frame"
+        self.spot_ros.spot_wrapper.hand_images.append(image_response)
+
     def main(self):
         rospy.init_node(self.spot_ros.node_name, anonymous=True)
         # Initialize variables for transforms
         self.spot_ros.mode_parent_odom_tf = "vision"
+        self.spot_ros.tf_name_kinematic_odom = "odom"
+        self.spot_ros.tf_name_raw_kinematic = "odom"
+        self.spot_ros.tf_name_vision_odom = "vision"
+        self.spot_ros.tf_name_raw_vision = "vision"
 
         # Set up the publishers
         self.spot_ros.initialize_publishers()
 
-        # Manually set robot_state, metrics
+        # Manually set robot_state, metrics, lease data
         self.set_robot_state()
         self.set_robot_metrics()
         self.set_robot_lease()
+
+        # Manually set robot images data
+        self.set_robot_front_camera_data()
+        self.set_robot_rear_camera_data()
+        self.set_robot_side_camera_data()
+        self.set_hand_camera_data()
+
+        # Set running rate
+        rate = rospy.Rate(50)
 
         while not rospy.is_shutdown():
             # Call publish callbacks
             self.spot_ros.RobotStateCB("robot_state_test")
             self.spot_ros.MetricsCB("metrics_test")
             self.spot_ros.LeaseCB("lease_test")
+            self.spot_ros.FrontImageCB("front_camera_test")
+            self.spot_ros.RearImageCB("rear_camera_test")
+            self.spot_ros.SideImageCB("side_camera_test")
+            self.spot_ros.HandImageCB("hand_camera_test")
+            rate.sleep()
 
 
 if __name__ == "__main__":

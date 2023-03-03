@@ -316,8 +316,8 @@ class SpotROS:
         """
         data = self.spot_wrapper.hand_images
         if data:
-            mage_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
-            self.hand_image_mono_pub.publish(mage_msg0)
+            image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
+            self.hand_image_mono_pub.publish(image_msg0)
             self.hand_image_mono_info_pub.publish(camera_info_msg0)
             mage_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
             self.hand_depth_pub.publish(mage_msg1)
