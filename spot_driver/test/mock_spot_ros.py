@@ -18,6 +18,7 @@ from spot_msgs.srv import GripperAngleMoveResponse, GripperAngleMoveRequest
 from spot_msgs.srv import ArmJointMovementResponse, ArmJointMovementRequest
 from spot_msgs.srv import ArmForceTrajectoryResponse
 from spot_msgs.srv import HandPoseResponse, HandPoseRequest
+from spot_msgs.srv import SpotCheckRequest, SpotCheckResponse, SpotCheck
 
 from bosdyn.api import image_pb2, robot_state_pb2, lease_pb2, geometry_pb2
 from bosdyn.api.docking import docking_pb2
@@ -298,6 +299,9 @@ class TestSpotROS(SpotROS):
         self.body_pose_as.set_succeeded(
             PoseBodyResult(success=True, message="Successfully called body_pose")
         )
+
+    def handle_spot_check(self, req: SpotCheckRequest) -> SpotCheckResponse:
+        return SpotCheckResponse(success=True, message="Successfully called spot_check")
 
 
 # Run the mock SpotROS class as a node

@@ -28,6 +28,7 @@ from .spot_arm import SpotArm
 from .spot_estop_lease import SpotEstopLease
 from .spot_docking import SpotDocking
 from .spot_graph_nav import SpotGraphNav
+from .spot_check import SpotCheck
 
 from bosdyn.api import robot_command_pb2
 from bosdyn.api import robot_id_pb2
@@ -648,6 +649,10 @@ class SpotWrapper:
                 self._robot, self._logger, self._robot_params, self._robot_clients
             )
 
+            self._spot_check = SpotCheck(
+                self._robot, self._logger, self._robot_params, self._robot_clients
+            )
+
             self._lease = None
 
     @property
@@ -672,6 +677,11 @@ class SpotWrapper:
     def spot_graph_nav(self) -> SpotGraphNav:
         """Return SpotGraphNav instance"""
         return self._spot_graph_nav
+
+    @property
+    def spot_check(self) -> SpotCheck:
+        """Return SpotCheck instance"""
+        return self._spot_check
 
     @property
     def logger(self) -> logging.Logger:

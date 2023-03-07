@@ -67,6 +67,7 @@ from spot_msgs.srv import (
 )
 from spot_msgs.srv import ArmForceTrajectory, ArmForceTrajectoryResponse
 from spot_msgs.srv import HandPose, HandPoseResponse, HandPoseRequest
+from spot_msgs.srv import SpotCheckRequest, SpotCheckResponse, SpotCheck
 
 from spot_driver.ros_helpers import *
 from spot_driver.spot_wrapper import SpotWrapper
@@ -1174,6 +1175,25 @@ class SpotROS:
                 self.camera_static_transforms
             )
 
+    def handle_spot_check(self, req: SpotCheckRequest) -> SpotCheckResponse:
+        """ROS service handler for spot_check"""
+        if req.revert_calibration:
+            resp = self.spot_wrapper.spot_check.revert_calibration()
+        elif req.start and req.blocking:
+            resp = self.spot_wrapper.spot_check.blocking_check()
+        elif req.start:
+            resp = self.spot_wrapper.spot_check.start_check()
+        else:
+            # Stop spot check
+            resp = self.spot_wrapper.spot_check.stop_check()
+
+        if self.spot_wrapper.spot_check.spot_check_resp:
+            return GetSpotCheckResultsMsg(
+                self.spot_wrapper.spot_check.spot_check_resp, resp
+            )
+        else:
+            return SpotCheckResponse(success=resp[0], message=resp[1])
+
     # Arm functions ##################################################
     def handle_arm_stow(self, srv_data) -> TriggerResponse:
         """ROS service handler to command the arm to stow, home position"""
@@ -1574,6 +1594,8 @@ class SpotROS:
         rospy.Service("dock", Dock, self.handle_dock)
         rospy.Service("undock", Trigger, self.handle_undock)
         rospy.Service("docking_state", GetDockState, self.handle_get_docking_state)
+        # Spot Check
+        rospy.Service("spot_check", SpotCheck, self.handle_spot_check)
         # Arm Services #########################################
         rospy.Service("arm_stow", Trigger, self.handle_arm_stow)
         rospy.Service("arm_unstow", Trigger, self.handle_arm_unstow)

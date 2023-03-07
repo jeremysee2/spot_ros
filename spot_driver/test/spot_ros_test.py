@@ -12,6 +12,7 @@ from rosservice import get_service_class_by_name
 
 
 from spot_msgs.srv import PosedStandRequest
+from spot_msgs.srv import SpotCheckRequest, SpotCheckResponse, SpotCheck
 from std_msgs.msg import Duration
 from std_srvs.srv import TriggerResponse
 from bosdyn.api import robot_state_pb2, geometry_pb2
@@ -899,7 +900,9 @@ class TestServiceHandlers(unittest.TestCase):
             "/spot/list_graph", "test_file/path"
         )
 
-        self.assertTrue(resp.waypoint_ids, ["1", "2", "3"])
+        self.assertEqual(
+            resp.waypoint_ids, ["1", "2", "3"], "List graph service failed"
+        )
 
     def test_roll_over_right(self):
         # Test that the roll over right service works
@@ -997,6 +1000,13 @@ class TestServiceHandlers(unittest.TestCase):
 
         self.assertTrue(resp.success, "Hand pose service failed")
         self.assertEqual(resp.message, "Successfully called gripper_pose")
+
+    def test_spot_check(self):
+        # Test that the Spot Check service works
+        resp: SpotCheckResponse = self.call_service("/spot/spot_check")
+
+        self.assertTrue(resp.success, "Spot Check service failed")
+        self.assertEqual(resp.message, "Successfully called spot_check")
 
 
 class TestActionHandlers(unittest.TestCase):
