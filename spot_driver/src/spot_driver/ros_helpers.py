@@ -248,7 +248,9 @@ def GetPointCloudMsg(data, spot_wrapper):
     return point_cloud_msg
 
 
-def GetPointCloudMsg(data, spot_wrapper):
+def GetPointCloudMsg(
+    data: point_cloud_pb2.PointCloudResponse, spot_wrapper: SpotWrapper
+) -> PointCloud2:
     """Takes the imag and  camera data and populates the necessary ROS messages
 
     Args:

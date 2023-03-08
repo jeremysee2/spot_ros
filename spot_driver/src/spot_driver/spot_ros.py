@@ -20,7 +20,7 @@ from tf2_msgs.msg import TFMessage
 from bosdyn.client import math_helpers
 from bosdyn.api.spot import robot_command_pb2 as spot_command_pb2
 from bosdyn.api import geometry_pb2, trajectory_pb2
-from bosdyn.api import robot_id_pb2
+from bosdyn.api import robot_id_pb2, point_cloud_pb2
 from bosdyn.api.geometry_pb2 import Quaternion, SE2VelocityLimit
 from google.protobuf.wrappers_pb2 import DoubleValue
 
@@ -1187,7 +1187,9 @@ class SpotROS:
                 self.sensors_static_transforms
             )
 
-    def populate_lidar_static_transforms(self, point_cloud_data):
+    def populate_lidar_static_transforms(
+        self, point_cloud_data: point_cloud_pb2.PointCloud
+    ):
         """Check data received from one of the point cloud tasks and use the transform snapshot to extract the lidar frame
         transforms. This is the transforms from body->sensor, for example. These transforms
         never change, but they may be calibrated slightly differently for each robot so we need to generate the
