@@ -1,4 +1,6 @@
 import typing
+import numpy as np
+
 import rospy
 
 from sensor_msgs.msg import Image, CameraInfo
@@ -20,15 +22,14 @@ from spot_msgs.msg import BatteryState, BatteryStateArray
 from spot_msgs.msg import DockState
 from spot_msgs.srv import SpotCheckRequest, SpotCheckResponse
 
-from bosdyn.api import image_pb2, robot_state_pb2
+from bosdyn.api import image_pb2, robot_state_pb2, point_cloud_pb2
 from bosdyn.api.docking import docking_pb2
-from bosdyn.client.spot_check import spot_check_pb2, point_cloud_pb2
+from bosdyn.client.spot_check import spot_check_pb2
 from bosdyn.client.math_helpers import SE3Pose
 from bosdyn.client.frame_helpers import get_odom_tform_body, get_vision_tform_body
 
 from .spot_wrapper import SpotWrapper
 
-import numpy as np
 
 friendly_joint_names = {}
 """Dictionary for mapping BD joint names to more friendly names"""

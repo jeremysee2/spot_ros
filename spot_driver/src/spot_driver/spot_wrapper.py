@@ -5,8 +5,7 @@ import logging
 import typing
 
 from bosdyn.geometry import EulerZXY
-
-import bosdyn.client.auth
+from bosdyn.client.auth import InvalidLoginError
 from bosdyn.client import create_standard_sdk, ResponseError, RpcError
 from bosdyn.client.async_tasks import AsyncPeriodicQuery, AsyncTasks
 from bosdyn.client.robot_state import RobotStateClient
@@ -19,18 +18,14 @@ from bosdyn.client.docking import DockingClient
 from bosdyn.client.time_sync import TimeSyncEndpoint
 from bosdyn.client.estop import EstopClient
 from bosdyn.client.spot_check import SpotCheckClient
-from bosdyn.client.docking import DockingClient, blocking_dock_robot, blocking_undock
-from bosdyn.api import image_pb2
-from bosdyn.client.point_cloud import PointCloudClient, build_pc_request
-from bosdyn.api import estop_pb2, image_pb2
-from bosdyn.api.graph_nav import graph_nav_pb2
-from bosdyn.api.graph_nav import map_pb2
-from bosdyn.api.graph_nav import nav_pb2
-from bosdyn.client.estop import EstopClient, EstopEndpoint, EstopKeepAlive
+from bosdyn.client.docking import DockingClient
+from bosdyn.client.estop import EstopClient
 from bosdyn.client import power
 from bosdyn.client import frame_helpers
 from bosdyn.client import math_helpers
-from bosdyn.client.exceptions import InternalServerError
+from bosdyn.client.point_cloud import PointCloudClient, build_pc_request
+from bosdyn.api import image_pb2
+
 
 from .spot_arm import SpotArm
 from .spot_estop_lease import SpotEstopLease
@@ -537,7 +532,7 @@ class SpotWrapper:
                     )
                 )
                 time.sleep(sleep_secs)
-            except bosdyn.client.auth.InvalidLoginError as err:
+            except InvalidLoginError as err:
                 self._logger.error("Failed to log in to robot: {}".format(err))
                 self._valid = False
                 return
@@ -596,6 +591,13 @@ class SpotWrapper:
                         "spot_check_client": self._spot_check_client,
                         "robot_command_method": self._robot_command,
                     }
+                    if self._point_cloud_client:
+                        self._robot_clients[
+                            "point_cloud_client"
+                        ] = self._point_cloud_client
+                    self._logger.info(
+                        "Successfully created Spot SDK clients in SpotWrapper."
+                    )
                 except Exception as e:
                     sleep_secs = 15
                     self._logger.warn(
