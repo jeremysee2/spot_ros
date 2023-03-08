@@ -19,6 +19,14 @@ from bosdyn.client.docking import DockingClient
 from bosdyn.client.time_sync import TimeSyncEndpoint
 from bosdyn.client.estop import EstopClient
 from bosdyn.client.spot_check import SpotCheckClient
+from bosdyn.client.docking import DockingClient, blocking_dock_robot, blocking_undock
+from bosdyn.api import image_pb2
+from bosdyn.client.point_cloud import PointCloudClient, build_pc_request
+from bosdyn.api import estop_pb2, image_pb2
+from bosdyn.api.graph_nav import graph_nav_pb2
+from bosdyn.api.graph_nav import map_pb2
+from bosdyn.api.graph_nav import nav_pb2
+from bosdyn.client.estop import EstopClient, EstopEndpoint, EstopKeepAlive
 from bosdyn.client import power
 from bosdyn.client import frame_helpers
 from bosdyn.client import math_helpers
@@ -54,6 +62,10 @@ side_image_sources = [
 """List of image sources for side image periodic query"""
 rear_image_sources = ["back_fisheye_image", "back_depth"]
 """List of image sources for rear image periodic query"""
+VELODYNE_SERVICE_NAME = "velodyne-point-cloud"
+"""Service name for getting pointcloud of VLP16 connected to Spot Core"""
+point_cloud_sources = ["velodyne-point-cloud"]
+"""List of point cloud sources"""
 hand_image_sources = [
     "hand_image",
     "hand_depth",
@@ -189,6 +201,34 @@ class AsyncImageService(AsyncPeriodicQuery):
             return callback_future
 
 
+class AsyncPointCloudService(AsyncPeriodicQuery):
+    """Class to get point cloud at regular intervals.  get_point_cloud_from_sources_async query sent to the robot at every tick.  Callback registered to defined callback function.
+
+    Attributes:
+        client: The Client to a service on the robot
+        logger: Logger object
+        rate: Rate (Hz) to trigger the query
+        callback: Callback function to call when the results of the query are available
+    """
+
+    def __init__(self, client, logger, rate, callback, point_cloud_requests):
+        super(AsyncPointCloudService, self).__init__(
+            "robot_point_cloud_service", client, logger, period_sec=1.0 / max(rate, 1.0)
+        )
+        self._callback = None
+        if rate > 0.0:
+            self._callback = callback
+        self._point_cloud_requests = point_cloud_requests
+
+    def _start_query(self):
+        if self._callback and self._point_cloud_requests:
+            callback_future = self._client.get_point_cloud_async(
+                self._point_cloud_requests
+            )
+            callback_future.add_done_callback(self._callback)
+            return callback_future
+
+
 class AsyncIdle(AsyncPeriodicQuery):
     """Class to check if the robot is moving, and if not, command a stand with the set mobility parameters
 
@@ -312,6 +352,8 @@ class AsyncIdle(AsyncPeriodicQuery):
 
         self._spot_wrapper._robot_params["is_moving"] = is_moving
 
+        # We must check if any command currently has a non-None value for its id. If we don't do this, this stand
+        # command can cause other commands to be interrupted before they get to start
         if (
             self._spot_wrapper.is_standing
             and not self._spot_wrapper.is_moving
@@ -453,6 +495,10 @@ class SpotWrapper:
                 build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW)
             )
 
+        self._point_cloud_requests = []
+        for source in point_cloud_sources:
+            self._point_cloud_requests.append(build_pc_request(source))
+
         self._hand_image_requests = []
         for source in hand_image_sources:
             self._hand_image_requests.append(
@@ -495,6 +541,13 @@ class SpotWrapper:
                 self._logger.error("Failed to log in to robot: {}".format(err))
                 self._valid = False
                 return
+            try:
+                self._point_cloud_client = self._robot.ensure_client(
+                    VELODYNE_SERVICE_NAME
+                )
+            except Exception as e:
+                self._point_cloud_client = None
+                self._logger.warn("No point cloud services are available.")
 
         if self._robot:
             # Clients
@@ -594,6 +647,13 @@ class SpotWrapper:
                 self._callbacks.get("rear_image", lambda: None),
                 self._rear_image_requests,
             )
+            self._point_cloud_task = AsyncPointCloudService(
+                self._point_cloud_client,
+                self._logger,
+                max(0.0, self._rates.get("point_cloud", 0.0)),
+                self._callbacks.get("lidar_points", lambda: None),
+                self._point_cloud_requests,
+            )
             self._hand_image_task = AsyncImageService(
                 self._image_client,
                 self._logger,
@@ -619,6 +679,7 @@ class SpotWrapper:
                     self._front_image_task,
                     self._idle_task,
                     self._estop_monitor,
+                    self._point_cloud_task,
                 ]
             )
 
@@ -728,6 +789,16 @@ class SpotWrapper:
     def hand_images(self) -> typing.List[image_pb2.ImageResponse]:
         """Return latest proto from the _hand_image_task"""
         return self._hand_image_task.proto
+
+    @property
+    def point_clouds(self):
+        """Return latest proto from the _point_cloud_task"""
+        return self._point_cloud_task.proto
+
+    @property
+    def point_clouds(self):
+        """Return latest proto from the _point_cloud_task"""
+        return self._point_cloud_task.proto
 
     @property
     def is_standing(self) -> bool:
