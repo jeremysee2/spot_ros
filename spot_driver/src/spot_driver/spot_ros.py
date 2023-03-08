@@ -1,24 +1,28 @@
-import rospy
 import math
 import time
+import functools
+import logging
+import threading
+import typing
+
+import actionlib
+import rospy
+
 from std_srvs.srv import Trigger, TriggerResponse, SetBool, SetBoolResponse
 from std_msgs.msg import Bool
-from tf2_msgs.msg import TFMessage
 from sensor_msgs.msg import Image, CameraInfo
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import TwistWithCovarianceStamped, Twist, Pose, PoseStamped
 from nav_msgs.msg import Odometry
+from tf2_msgs.msg import TFMessage
 
-
+from bosdyn.client import math_helpers
 from bosdyn.api.spot import robot_command_pb2 as spot_command_pb2
 from bosdyn.api import geometry_pb2, trajectory_pb2
 from bosdyn.api import robot_id_pb2
 from bosdyn.api.geometry_pb2 import Quaternion, SE2VelocityLimit
-from bosdyn.client import math_helpers
 from google.protobuf.wrappers_pb2 import DoubleValue
-import actionlib
-import functools
-import math
+
 import tf2_ros
 import tf2_geometry_msgs
 
@@ -71,11 +75,6 @@ from spot_msgs.srv import SpotCheckRequest, SpotCheckResponse, SpotCheck
 
 from spot_driver.ros_helpers import *
 from spot_driver.spot_wrapper import SpotWrapper
-
-import actionlib
-import logging
-import threading
-import typing
 
 
 class RateLimitedCall:
@@ -194,22 +193,20 @@ class SpotROS:
 
         if metrics:
             metrics_msg = Metrics()
-            local_time = self.spot_wrapper.robotToLocalTime(
-                metrics.timestamp
-            )  # type: ignore
+            local_time = self.spot_wrapper.robotToLocalTime(metrics.timestamp)
             metrics_msg.header.stamp = rospy.Time(local_time.seconds, local_time.nanos)
 
-            for metric in metrics.metrics:  # type: ignore
+            for metric in metrics.metrics:
                 if metric.label == "distance":
                     metrics_msg.distance = metric.float_value
                 if metric.label == "gait cycles":
                     metrics_msg.gait_cycles = metric.int_value
                 if metric.label == "time moving":
-                    metrics_msg.time_moving = rospy.Time(  # type: ignore
+                    metrics_msg.time_moving = rospy.Time(
                         metric.duration.seconds, metric.duration.nanos
                     )
                 if metric.label == "electric power":
-                    metrics_msg.electric_power = rospy.Time(  # type: ignore
+                    metrics_msg.electric_power = rospy.Time(
                         metric.duration.seconds, metric.duration.nanos
                     )
 
@@ -224,19 +221,19 @@ class SpotROS:
         lease_array_msg = LeaseArray()
         lease_list = self.spot_wrapper.lease
         if lease_list:
-            for resource in lease_list:  # type: ignore
+            for resource in lease_list:
                 new_resource = LeaseResource()
                 new_resource.resource = resource.resource
                 new_resource.lease.resource = resource.lease.resource
                 new_resource.lease.epoch = resource.lease.epoch
 
                 for seq in resource.lease.sequence:
-                    new_resource.lease.sequence.append(seq)  # type: ignore
+                    new_resource.lease.sequence.append(seq)
 
                 new_resource.lease_owner.client_name = resource.lease_owner.client_name
                 new_resource.lease_owner.user_name = resource.lease_owner.user_name
 
-                lease_array_msg.resources.append(new_resource)  # type: ignore
+                lease_array_msg.resources.append(new_resource)
 
             self.lease_pub.publish(lease_array_msg)
 
@@ -493,7 +490,7 @@ class SpotROS:
         """ROS service handler to set a stair mode to the robot."""
         try:
             mobility_params = self.spot_wrapper.get_mobility_params()
-            mobility_params.stair_hint = req.data  # type: ignore
+            mobility_params.stair_hint = req.data
             self.spot_wrapper.set_mobility_params(mobility_params)
             return SetBoolResponse(
                 True, "Success, stair mode set to {}".format(req.data)
@@ -511,7 +508,7 @@ class SpotROS:
             return SetLocomotionResponse(False, msg)
         try:
             mobility_params = self.spot_wrapper.get_mobility_params()
-            mobility_params.locomotion_hint = req.locomotion_mode  # type: ignore
+            mobility_params.locomotion_hint = req.locomotion_mode
             self.spot_wrapper.set_mobility_params(mobility_params)
             return SetLocomotionResponse(
                 True, "Success, locomotion mode set to {}".format(req.locomotion_mode)
@@ -529,7 +526,7 @@ class SpotROS:
             return SetSwingHeightResponse(False, msg)
         try:
             mobility_params = self.spot_wrapper.get_mobility_params()
-            mobility_params.swing_height = req.swing_height  # type: ignore
+            mobility_params.swing_height = req.swing_height
             self.spot_wrapper.set_mobility_params(mobility_params)
             return SetSwingHeightResponse(
                 True, "Success, step swing height set to {}".format(req.swing_height)
@@ -580,7 +577,7 @@ class SpotROS:
             )
         try:
             mobility_params = self.spot_wrapper.get_mobility_params()
-            mobility_params.vel_limit.CopyFrom(  # type: ignore
+            mobility_params.vel_limit.CopyFrom(
                 SE2VelocityLimit(
                     max_vel=math_helpers.SE2Velocity(
                         max_linear_x, max_linear_y, max_angular_z
@@ -665,7 +662,7 @@ class SpotROS:
         Returns: (bool, str) True if successful, along with a message
 
         """
-        self.allow_motion: bool = req.data  # type: ignore
+        self.allow_motion: bool = req.data
         rospy.loginfo(
             "Robot motion is now {}".format(
                 "allowed" if self.allow_motion else "disallowed"
@@ -674,7 +671,7 @@ class SpotROS:
         if not self.allow_motion:
             # Always send a stop command if disallowing motion, in case the robot is moving when it is sent
             self.spot_wrapper.stop()
-        # type: ignore
+
         return True, "Spot motion was {}".format("enabled" if req.data else "disabled")
 
     def handle_obstacle_params(self, req: MobilityParams) -> typing.Tuple[bool, str]:
@@ -722,11 +719,11 @@ class SpotROS:
                 + disable_notallowed
             )
 
-        obstacle_params.obstacle_avoidance_padding = (  # type: ignore
+        obstacle_params.obstacle_avoidance_padding = (
             req.obstacle_params.obstacle_avoidance_padding
         )
 
-        mobility_params.obstacle_params.CopyFrom(obstacle_params)  # type: ignore
+        mobility_params.obstacle_params.CopyFrom(obstacle_params)
         self.spot_wrapper.set_mobility_params(mobility_params)
         return True, "Successfully set obstacle params" + disable_notallowed
 
@@ -759,7 +756,7 @@ class SpotROS:
             )
 
         if req.terrain_params.grated_surfaces_mode in [1, 2, 3]:
-            terrain_params.grated_surfaces_mode = (  # type: ignore
+            terrain_params.grated_surfaces_mode = (
                 req.terrain_params.grated_surfaces_mode
             )
         else:
@@ -770,7 +767,7 @@ class SpotROS:
                 ),
             )
 
-        mobility_params.terrain_params.CopyFrom(terrain_params)  # type: ignore
+        mobility_params.terrain_params.CopyFrom(terrain_params)
         self.spot_wrapper.set_mobility_params(mobility_params)
         return True, "Successfully set terrain params"
 
@@ -1069,7 +1066,7 @@ class SpotROS:
         body_control = spot_command_pb2.BodyControlParams(base_offset_rt_footprint=traj)
 
         mobility_params = self.spot_wrapper.get_mobility_params()
-        mobility_params.body_control.CopyFrom(body_control)  # type: ignore
+        mobility_params.body_control.CopyFrom(body_control)
         self.spot_wrapper.set_mobility_params(mobility_params)
 
     def handle_list_graph(self, upload_path) -> ListGraphResponse:
@@ -1261,73 +1258,86 @@ class SpotROS:
         mobility_params_msg = MobilityParams()
         try:
             mobility_params = self.spot_wrapper.get_mobility_params()
-            mobility_params_msg.body_control.position.x = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                0
-            ].pose.position.x
-            mobility_params_msg.body_control.position.y = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                0
-            ].pose.position.y
-            mobility_params_msg.body_control.position.z = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                0
-            ].pose.position.z
-            mobility_params_msg.body_control.orientation.x = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                0
-            ].pose.rotation.x
-            mobility_params_msg.body_control.orientation.y = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                0
-            ].pose.rotation.y
-            mobility_params_msg.body_control.orientation.z = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                0
-            ].pose.rotation.z
-            mobility_params_msg.body_control.orientation.w = mobility_params.body_control.base_offset_rt_footprint.points[  # type: ignore
-                0
-            ].pose.rotation.w
-            mobility_params_msg.locomotion_hint = mobility_params.locomotion_hint  # type: ignore
-            mobility_params_msg.stair_hint = mobility_params.stair_hint  # type: ignore
-            mobility_params_msg.swing_height = mobility_params.swing_height  # type: ignore
+            mobility_params_msg.body_control.position.x = (
+                mobility_params.body_control.base_offset_rt_footprint.points[
+                    0
+                ].pose.position.x
+            )
+            mobility_params_msg.body_control.position.y = (
+                mobility_params.body_control.base_offset_rt_footprint.points[
+                    0
+                ].pose.position.y
+            )
+            mobility_params_msg.body_control.position.z = (
+                mobility_params.body_control.base_offset_rt_footprint.points[
+                    0
+                ].pose.position.z
+            )
+            mobility_params_msg.body_control.orientation.x = (
+                mobility_params.body_control.base_offset_rt_footprint.points[
+                    0
+                ].pose.rotation.x
+            )
+            mobility_params_msg.body_control.orientation.y = (
+                mobility_params.body_control.base_offset_rt_footprint.points[
+                    0
+                ].pose.rotation.y
+            )
+            mobility_params_msg.body_control.orientation.z = (
+                mobility_params.body_control.base_offset_rt_footprint.points[
+                    0
+                ].pose.rotation.z
+            )
+            mobility_params_msg.body_control.orientation.w = (
+                mobility_params.body_control.base_offset_rt_footprint.points[
+                    0
+                ].pose.rotation.w
+            )
+            mobility_params_msg.locomotion_hint = mobility_params.locomotion_hint
+            mobility_params_msg.stair_hint = mobility_params.stair_hint
+            mobility_params_msg.swing_height = mobility_params.swing_height
             mobility_params_msg.obstacle_params.obstacle_avoidance_padding = (
-                mobility_params.obstacle_params.obstacle_avoidance_padding  # type: ignore
+                mobility_params.obstacle_params.obstacle_avoidance_padding
             )
             mobility_params_msg.obstacle_params.disable_vision_foot_obstacle_avoidance = (
-                mobility_params.obstacle_params.disable_vision_foot_obstacle_avoidance  # type: ignore
+                mobility_params.obstacle_params.disable_vision_foot_obstacle_avoidance
             )
             mobility_params_msg.obstacle_params.disable_vision_foot_constraint_avoidance = (
-                mobility_params.obstacle_params.disable_vision_foot_constraint_avoidance  # type: ignore
+                mobility_params.obstacle_params.disable_vision_foot_constraint_avoidance
             )
             mobility_params_msg.obstacle_params.disable_vision_body_obstacle_avoidance = (
-                mobility_params.obstacle_params.disable_vision_body_obstacle_avoidance  # type: ignore
+                mobility_params.obstacle_params.disable_vision_body_obstacle_avoidance
             )
             mobility_params_msg.obstacle_params.disable_vision_foot_obstacle_body_assist = (
-                mobility_params.obstacle_params.disable_vision_foot_obstacle_body_assist  # type: ignore
+                mobility_params.obstacle_params.disable_vision_foot_obstacle_body_assist
             )
             mobility_params_msg.obstacle_params.disable_vision_negative_obstacles = (
-                mobility_params.obstacle_params.disable_vision_negative_obstacles  # type: ignore
+                mobility_params.obstacle_params.disable_vision_negative_obstacles
             )
-            if mobility_params.HasField("terrain_params"):  # type: ignore
-                # type: ignore
-                if mobility_params.terrain_params.HasField("ground_mu_hint"):  # type: ignore
+            if mobility_params.HasField("terrain_params"):
+                if mobility_params.terrain_params.HasField("ground_mu_hint"):
                     mobility_params_msg.terrain_params.ground_mu_hint = (
-                        mobility_params.terrain_params.ground_mu_hint  # type: ignore
+                        mobility_params.terrain_params.ground_mu_hint
                     )
                     # hasfield does not work on grated surfaces mode
-                if hasattr(mobility_params.terrain_params, "grated_surfaces_mode"):  # type: ignore
-                    mobility_params_msg.terrain_params.grated_surfaces_mode = (  # type: ignore
-                        mobility_params.terrain_params.grated_surfaces_mode  # type: ignore
+                if hasattr(mobility_params.terrain_params, "grated_surfaces_mode"):
+                    mobility_params_msg.terrain_params.grated_surfaces_mode = (
+                        mobility_params.terrain_params.grated_surfaces_mode
                     )
 
             # The velocity limit values can be set independently so make sure each of them exists before setting
-            if mobility_params.HasField("vel_limit"):  # type: ignore
-                if hasattr(mobility_params.vel_limit.max_vel.linear, "x"):  # type: ignore
+            if mobility_params.HasField("vel_limit"):
+                if hasattr(mobility_params.vel_limit.max_vel.linear, "x"):
                     mobility_params_msg.velocity_limit.linear.x = (
-                        mobility_params.vel_limit.max_vel.linear.x  # type: ignore
+                        mobility_params.vel_limit.max_vel.linear.x
                     )
-                if hasattr(mobility_params.vel_limit.max_vel.linear, "y"):  # type: ignore
+                if hasattr(mobility_params.vel_limit.max_vel.linear, "y"):
                     mobility_params_msg.velocity_limit.linear.y = (
-                        mobility_params.vel_limit.max_vel.linear.y  # type: ignore
+                        mobility_params.vel_limit.max_vel.linear.y
                     )
-                if hasattr(mobility_params.vel_limit.max_vel, "angular"):  # type: ignore
+                if hasattr(mobility_params.vel_limit.max_vel, "angular"):
                     mobility_params_msg.velocity_limit.angular.z = (
-                        mobility_params.vel_limit.max_vel.angular  # type: ignore
+                        mobility_params.vel_limit.max_vel.angular
                     )
         except Exception as e:
             rospy.logerr("Error:{}".format(e))
@@ -1339,13 +1349,13 @@ class SpotROS:
         feedback_msg.standing = self.spot_wrapper.is_standing
         feedback_msg.sitting = self.spot_wrapper.is_sitting
         feedback_msg.moving = self.spot_wrapper.is_moving
-        id_: robot_id_pb2.RobotId = self.spot_wrapper.id  # type: ignore
+        id_: robot_id_pb2.RobotId = self.spot_wrapper.id
         try:
-            feedback_msg.serial_number = id_.serial_number  # type: ignore
-            feedback_msg.species = id_.species  # type: ignore
-            feedback_msg.version = id_.version  # type: ignore
-            feedback_msg.nickname = id_.nickname  # type: ignore
-            feedback_msg.computer_serial_number = id_.computer_serial_number  # type: ignore
+            feedback_msg.serial_number = id_.serial_number
+            feedback_msg.species = id_.species
+            feedback_msg.version = id_.version
+            feedback_msg.nickname = id_.nickname
+            feedback_msg.computer_serial_number = id_.computer_serial_number
         except:
             pass
         self.feedback_pub.publish(feedback_msg)

@@ -6,7 +6,7 @@ from bosdyn.client.robot import Robot
 from bosdyn.client import robot_command
 from bosdyn.client.spot_check import SpotCheckClient, run_spot_check
 from bosdyn.client.spot_check import spot_check_pb2
-from bosdyn.api import lease_pb2, header_pb2
+from bosdyn.api import header_pb2
 from google.protobuf.timestamp_pb2 import Timestamp
 from bosdyn.client.lease import LeaseClient, LeaseWallet, Lease
 
@@ -105,6 +105,25 @@ class SpotCheck:
             return False, "Timeout during gripper calibration"
 
         return True, "Successfully ran Spot Check"
+
+    def _req_feedback(self) -> spot_check_pb2.SpotCheckFeedbackResponse:
+        start_time_seconds, start_time_ns = int(time.time()), int(time.time_ns() % 1e9)
+        req = spot_check_pb2.SpotCheckFeedbackRequest(
+            header=header_pb2.RequestHeader(
+                request_timestamp=Timestamp(
+                    seconds=start_time_seconds, nanos=start_time_ns
+                ),
+                client_name="spot-check",
+                disable_rpc_logging=False,
+            )
+        )
+        resp: spot_check_pb2.SpotCheckFeedbackResponse = (
+            self._spot_check_client.spot_check_feedback(req)
+        )
+
+        self._spot_check_resp = resp
+
+        return resp
 
     def _spot_check_cmd(self, command: spot_check_pb2.SpotCheckCommandRequest):
         """Send a Spot Check command"""
@@ -234,25 +253,6 @@ class SpotCheck:
         except Exception as e:
             self._logger.error("Exception thrown: {}".format(e))
             return False, str(e)
-
-    def _req_feedback(self):
-        start_time_seconds, start_time_ns = int(time.time()), int(time.time_ns() % 1e9)
-        req = spot_check_pb2.SpotCheckFeedbackRequest(
-            header=header_pb2.RequestHeader(
-                request_timestamp=Timestamp(
-                    seconds=start_time_seconds, nanos=start_time_ns
-                ),
-                client_name="spot-check",
-                disable_rpc_logging=False,
-            )
-        )
-        resp: spot_check_pb2.SpotCheckFeedbackResponse = (
-            self._spot_check_client.spot_check_feedback(req)
-        )
-
-        self._spot_check_resp = resp
-
-        return resp
 
     def get_feedback(self) -> spot_check_pb2.SpotCheckFeedbackResponse:
         """Get feedback from Spot Check"""

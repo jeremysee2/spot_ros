@@ -6,12 +6,12 @@ SUITE = "ros_helpers_test.TestSuiteROSHelpers"
 import unittest
 import rospy
 
-import spot_driver.ros_helpers as ros_helpers
 from geometry_msgs.msg import Transform
 from spot_msgs.msg import FootState, FootStateArray
+
+from google.protobuf import wrappers_pb2, timestamp_pb2, duration_pb2
 from bosdyn.api import image_pb2, geometry_pb2, robot_state_pb2
 from bosdyn.api.docking import docking_pb2
-from google.protobuf import wrappers_pb2, timestamp_pb2, duration_pb2
 from bosdyn.client.spot_check import spot_check_pb2
 from bosdyn.client.frame_helpers import (
     add_edge_to_tree,
@@ -20,6 +20,7 @@ from bosdyn.client.frame_helpers import (
     ODOM_FRAME_NAME,
 )
 
+import spot_driver.ros_helpers as ros_helpers
 from spot_driver.spot_wrapper import SpotWrapper
 
 

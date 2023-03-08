@@ -1,19 +1,14 @@
-import rospy
-import tf2_ros
 import typing
+import rospy
 
-from std_msgs.msg import Empty
-from tf2_msgs.msg import TFMessage
-from geometry_msgs.msg import TransformStamped, Transform
 from sensor_msgs.msg import Image, CameraInfo
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import PoseWithCovariance
-from geometry_msgs.msg import TwistWithCovariance
 from geometry_msgs.msg import TwistWithCovarianceStamped
+from geometry_msgs.msg import TransformStamped, Transform
 from nav_msgs.msg import Odometry
+from tf2_msgs.msg import TFMessage
 
-from spot_msgs.msg import Metrics
-from spot_msgs.msg import LeaseArray, LeaseResource
 from spot_msgs.msg import FootState, FootStateArray
 from spot_msgs.msg import EStopState, EStopStateArray
 from spot_msgs.msg import WiFiState
