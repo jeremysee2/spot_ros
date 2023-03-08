@@ -32,12 +32,10 @@ class SpotCheck:
 
     @property
     def spot_check_resp(self) -> spot_check_pb2.SpotCheckFeedbackResponse:
-        self._logger.info("Retrieving spot_check_resp, {}".format(type(self._spot_check_resp)))
         return self._spot_check_resp
-    
+
     def _get_lease(self) -> Lease:
         self._lease = self._lease_wallet.get_lease()
-        self._logger.info("Got lease of type {}".format(type(self._lease)))
         return self._lease
 
     def _feedback_error_check(
@@ -54,94 +52,81 @@ class SpotCheck:
 
         # Check for other errors
         if (
-            resp.error.code
+            resp.error
             == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_UNEXPECTED_POWER_CHANGE
         ):
             return False, "Unexpected power change"
         elif (
-            resp.error.code
-            == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_INIT_IMU_CHECK
+            resp.error == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_INIT_IMU_CHECK
         ):
             return False, "Robot body is not flat on the ground"
         elif (
-            resp.error.code
+            resp.error
             == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_INIT_NOT_SITTING
         ):
             return False, "Robot body is not close to a sitting pose"
         elif (
-            resp.error.code
+            resp.error
             == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_LOADCELL_TIMEOUT
         ):
             return False, "Timeout during loadcell calibration"
         elif (
-            resp.error.code
+            resp.error
             == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_POWER_ON_FAILURE
         ):
             return False, "Error enabling motor power"
         elif (
-            resp.error.code
-            == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_ENDSTOP_TIMEOUT
+            resp.error == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_ENDSTOP_TIMEOUT
         ):
             return False, "Timeout during endstop calibration"
-        elif (
-            resp.error.code
-            == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_FAILED_STAND
-        ):
+        elif resp.error == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_FAILED_STAND:
             return False, "Robot failed to stand"
         elif (
-            resp.error.code
-            == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_CAMERA_TIMEOUT
+            resp.error == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_CAMERA_TIMEOUT
         ):
             return False, "Timeout during camera check"
-        elif (
-            resp.error.code
-            == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_GROUND_CHECK
-        ):
+        elif resp.error == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_GROUND_CHECK:
             return False, "Flat ground check failed"
         elif (
-            resp.error.code
+            resp.error
             == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_POWER_OFF_FAILURE
         ):
             return False, "Robot failed to power off"
         elif (
-            resp.error.code
-            == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_REVERT_FAILURE
+            resp.error == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_REVERT_FAILURE
         ):
             return False, "Robot failed to revert calibration"
-        elif (
-            resp.error.code
-            == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_FGKC_FAILURE
-        ):
+        elif resp.error == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_FGKC_FAILURE:
             return False, "Robot failed to do flat ground kinematic calibration"
         elif (
-            resp.error.code
+            resp.error
             == spot_check_pb2.SpotCheckFeedbackResponse.ERROR_GRIPPER_CAL_TIMEOUT
         ):
             return False, "Timeout during gripper calibration"
 
         return True, "Successfully ran Spot Check"
 
-    def _spot_check_cmd(
-        self, command: spot_check_pb2.SpotCheckCommandRequest
-    ):
+    def _spot_check_cmd(self, command: spot_check_pb2.SpotCheckCommandRequest):
         """Send a Spot Check command"""
         start_time_seconds, start_time_ns = int(time.time()), int(time.time_ns() % 1e9)
         req = spot_check_pb2.SpotCheckCommandRequest(
             header=header_pb2.RequestHeader(
-                request_timestamp=Timestamp(seconds=start_time_seconds, nanos=start_time_ns),
+                request_timestamp=Timestamp(
+                    seconds=start_time_seconds, nanos=start_time_ns
+                ),
                 client_name="spot-check",
                 disable_rpc_logging=False,
             ),
-            lease=self._get_lease(),
+            lease=self._get_lease().lease_proto,
             command=command,
         )
         self._spot_check_client.spot_check_command(req)
 
     def stop_check(self) -> typing.Tuple[bool, str]:
-        """Stop the Spot Check"""
-        self._spot_check_cmd(
-            spot_check_pb2.SpotCheckCommandRequest.COMMAND_ABORT
-        )
+        """Stop the Spot Check
+        Note: This may cause the robot to enter a FaultState. Use only in emergencies.
+        """
+        self._spot_check_cmd(spot_check_pb2.SpotCheckCommandRequest.COMMAND_ABORT)
 
         # Get feedback
         resp = self._req_feedback()
@@ -159,9 +144,7 @@ class SpotCheck:
 
     def revert_calibration(self) -> typing.Tuple[bool, str]:
         """Revert calibration for Spot Check"""
-        self._spot_check_cmd(
-            spot_check_pb2.SpotCheckCommandRequest.COMMAND_REVERT_CAL
-        )
+        self._spot_check_cmd(spot_check_pb2.SpotCheckCommandRequest.COMMAND_REVERT_CAL)
 
         # Get feedback
         resp = self._req_feedback()
@@ -190,9 +173,7 @@ class SpotCheck:
             else:
                 self._logger.info("Spot is already sitting")
 
-            self._spot_check_cmd(
-                spot_check_pb2.SpotCheckCommandRequest.COMMAND_START
-            )
+            self._spot_check_cmd(spot_check_pb2.SpotCheckCommandRequest.COMMAND_START)
 
             # Get feedback
             resp = self._req_feedback()
@@ -212,13 +193,12 @@ class SpotCheck:
 
     def blocking_check(
         self,
-        timeout_sec: int = 212,
+        timeout_sec: int = 360,
         update_freq: float = 0.25,
         verbose: bool = False,
     ) -> typing.Tuple[bool, str]:
         """Check the robot
         Args:
-            lease: Lease to use for the check
             timeout_sec: Timeout for the blocking check
             update_freq: Frequency to update the check
             verbose: Whether to print the check status
@@ -239,25 +219,29 @@ class SpotCheck:
             # Check the robot and block for timeout_sec
             self._logger.info("Blocking Spot Check is starting!")
             resp: spot_check_pb2.SpotCheckFeedbackResponse = run_spot_check(
-                self._spot_check_client, self._get_lease(), timeout_sec, update_freq, verbose
+                self._spot_check_client,
+                self._get_lease(),
+                timeout_sec,
+                update_freq,
+                verbose,
             )
 
-            self._logger.info("Blocking Spot Check ran successfully! {}".format(type(resp)))
-            self._logger.info("{}".format(",".join(list(resp.camera_results.keys()))))
+            self._logger.info("Blocking Spot Check ran successfully!")
             success, status = self._feedback_error_check(resp)
-            self._spot_check_resp = resp
-            with open("/home/ming/Desktop/ros_for_spot/catkin_ws/debug.txt", "a") as f:
-                f.write(resp)
+
             return success, status
 
         except Exception as e:
+            self._logger.error("Exception thrown: {}".format(e))
             return False, str(e)
 
     def _req_feedback(self):
         start_time_seconds, start_time_ns = int(time.time()), int(time.time_ns() % 1e9)
         req = spot_check_pb2.SpotCheckFeedbackRequest(
             header=header_pb2.RequestHeader(
-                request_timestamp=Timestamp(seconds=start_time_seconds, nanos=start_time_ns),
+                request_timestamp=Timestamp(
+                    seconds=start_time_seconds, nanos=start_time_ns
+                ),
                 client_name="spot-check",
                 disable_rpc_logging=False,
             )
@@ -273,6 +257,4 @@ class SpotCheck:
     def get_feedback(self) -> spot_check_pb2.SpotCheckFeedbackResponse:
         """Get feedback from Spot Check"""
         resp = self._req_feedback()
-        with open("/home/ming/Desktop/ros_for_spot/catkin_ws/debug.txt", "a") as f:
-            f.write(resp)
-        return True, "Successfully got feedback"
+        return resp[0], "Got only feedback from Spot Check"
