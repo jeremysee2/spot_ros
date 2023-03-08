@@ -7,7 +7,8 @@ import logging
 from bosdyn.client.robot import Robot
 from bosdyn.client import ResponseError, RpcError
 from bosdyn.client.estop import EstopEndpoint, EstopKeepAlive, EstopClient
-from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
+from bosdyn.client.lease import LeaseClient, LeaseKeepAlive, Lease
+from bosdyn.api import lease_pb2
 
 
 class SpotEstopLease:
@@ -28,6 +29,11 @@ class SpotEstopLease:
         self._estop_timeout: float = robot_params["estop_timeout"]
         self._robot_params = robot_params
         self._estop_keepalive = None
+        self._lease = None
+
+    @property
+    def lease(self) -> Lease:
+        return self._lease
 
     def claim(self) -> typing.Tuple[bool, str]:
         """Get a lease for the robot, a handle on the estop endpoint, and the ID of the robot."""

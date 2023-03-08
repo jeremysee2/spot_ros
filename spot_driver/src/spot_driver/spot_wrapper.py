@@ -19,6 +19,7 @@ from bosdyn.client.image import ImageClient, build_image_request
 from bosdyn.client.docking import DockingClient
 from bosdyn.client.time_sync import TimeSyncEndpoint
 from bosdyn.client.estop import EstopClient
+from bosdyn.client.spot_check import SpotCheckClient
 from bosdyn.client import power
 from bosdyn.client import frame_helpers
 from bosdyn.client import math_helpers
@@ -534,6 +535,9 @@ class SpotWrapper:
                     self._docking_client = self._robot.ensure_client(
                         DockingClient.default_service_name
                     )
+                    self._spot_check_client = self._robot.ensure_client(
+                        SpotCheckClient.default_service_name
+                    )
                     initialised = True
 
                     self._robot_clients = {
@@ -545,6 +549,7 @@ class SpotWrapper:
                         "image_client": self._image_client,
                         "estop_client": self._estop_client,
                         "docking_client": self._docking_client,
+                        "spot_check_client": self._spot_check_client,
                         "robot_command_method": self._robot_command,
                     }
                 except Exception as e:
