@@ -1183,6 +1183,8 @@ class SpotROS:
             resp = self.spot_wrapper.spot_check.blocking_check()
         elif req.start:
             resp = self.spot_wrapper.spot_check.start_check()
+        elif req.feedback_only:
+            resp = self.spot_wrapper.spot_check.get_feedback()
         else:
             # Stop spot check
             resp = self.spot_wrapper.spot_check.stop_check()

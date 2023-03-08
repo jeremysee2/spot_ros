@@ -2,6 +2,7 @@
 bool start
 bool blocking
 bool revert_calibration
+bool feedback_only
 ---
 bool success
 string message

@@ -252,3 +252,8 @@ class SpotCheck:
         )
 
         return resp
+
+    def get_feedback(self) -> spot_check_pb2.SpotCheckFeedbackResponse:
+        """Get feedback from Spot Check"""
+        resp = self._req_feedback()
+        return resp
