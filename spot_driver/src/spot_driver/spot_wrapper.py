@@ -798,11 +798,6 @@ class SpotWrapper:
         return self._point_cloud_task.proto
 
     @property
-    def point_clouds(self):
-        """Return latest proto from the _point_cloud_task"""
-        return self._point_cloud_task.proto
-
-    @property
     def is_standing(self) -> bool:
         """Return boolean of standing state"""
         return self._robot_params["is_standing"]
