@@ -34,7 +34,7 @@ from .spot_graph_nav import SpotGraphNav
 from .spot_check import SpotCheck
 
 from bosdyn.api import robot_command_pb2
-from bosdyn.api import robot_id_pb2
+from bosdyn.api import robot_id_pb2, point_cloud_pb2
 from bosdyn.api import image_pb2, robot_state_pb2, lease_pb2
 from bosdyn.api.spot import robot_command_pb2 as spot_command_pb2
 from bosdyn.api import basic_command_pb2
@@ -793,7 +793,7 @@ class SpotWrapper:
         return self._hand_image_task.proto
 
     @property
-    def point_clouds(self):
+    def point_clouds(self) -> typing.List[point_cloud_pb2.PointCloudResponse]:
         """Return latest proto from the _point_cloud_task"""
         return self._point_cloud_task.proto
 
