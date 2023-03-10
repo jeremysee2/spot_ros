@@ -430,7 +430,6 @@ class SpotWrapper:
             - Safely sit on stairs feedback
             - GripperCameraParamService
             - RayCastService
-            - Spot check
             - Auto return
             - Choreography
             - Constrained manipulation
