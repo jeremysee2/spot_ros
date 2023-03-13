@@ -30,4 +30,4 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/spot_ros:latest
           secrets: |
-            "SPOTROS_GIT_BRANCH=${{ steps.extract_branch.outputs.branch }}"
+            "SPOTROS_GIT_BRANCH=$GITHUB_OUTPUT"
