@@ -1,4 +1,4 @@
-name: docker-image-upload
+name: Docker image upload
 
 on: [push]
 

@@ -1,4 +1,4 @@
-name: Run spot_driver unit tests on rostest and rosunit
+name: spot_driver unit tests
 
 # Run on every push
 on: [push]
