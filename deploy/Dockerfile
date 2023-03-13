@@ -3,6 +3,12 @@ FROM ros:noetic-ros-base-focal
 RUN DEBIAN_FRONTEND=noninteractive apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y git
 
+# Get the secrets from Github Actions
+RUN --mount=type=secret,id=SPOTROS_GIT_BRANCH \
+  --mount=type=secret,id=SPOT_PASSWORD \
+   export SPOTROS_GIT_BRANCH=$(cat /run/secrets/SPOTROS_GIT_BRANCH) && \
+   export SPOT_PASSWORD=$(cat /run/secrets/SPOT_PASSWORD)
+
 # Download the Spot ROS packages
 RUN mkdir -p ~/catkin_ws/src
 WORKDIR ~/catkin_ws/src
