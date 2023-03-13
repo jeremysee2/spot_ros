@@ -20,8 +20,10 @@ jobs:
         uses: docker/setup-buildx-action@v2
       - name: Extract branch name
         # run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        run: echo "{branch}={$(echo ${GITHUB_REF#refs/heads/})}" >> $GITHUB_OUTPUT
+        run: echo "{branch}=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
         id: extract_branch
+      - name: Print branch name
+        run: ${{ steps.extract_branch.outputs.branch }}
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
@@ -30,4 +32,4 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/spot_ros:latest
           secrets: |
-            "SPOTROS_GIT_BRANCH=$GITHUB_OUTPUT"
+            "SPOTROS_GIT_BRANCH=${{ steps.extract_branch.outputs.branch }}"
