@@ -14,19 +14,19 @@ RUN --mount=type=secret,id=SPOTROS_GIT_BRANCH \
 
 RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros ros-noetic-catkin python3-catkin-pkg
 RUN python3 -m pip install cython bosdyn-client bosdyn-mission bosdyn-api bosdyn-core empy numpy
-RUN /bin/bash /opt/ros/noetic/setup.bash
+RUN /opt/ros/noetic/setup.sh
 
 # Install ROS dependencies
 WORKDIR /ros/catkin_ws/
 
-RUN ["/bin/bash", "-c", "rosdep install --from-paths /ros/catkin_ws/src --ignore-src -y"]
+RUN rosdep install --from-paths /ros/catkin_ws/src --ignore-src -y
 
 # Build ROS packages
 WORKDIR /ros/catkin_ws/
-RUN ["/bin/bash", "-c", "/opt/ros/noetic/bin/catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release"]
+RUN /opt/ros/noetic/bin/catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Source the new packages
-RUN /bin/bash /ros/catkin_ws/devel/setup.bash
+RUN /ros/catkin_ws/devel/setup.sh
 
 # Setup the environmental variables for including these in the URDF
 ARG SPOT_ARM=1
@@ -36,4 +36,4 @@ ARG SPOT_VELODYNE=1
 ARG SPOT_USERNAME=admin
 ARG SPOT_PASSWORD=dummypassword
 
-RUN ["/bin/bash", "-c", "roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD"]
+RUN roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD
