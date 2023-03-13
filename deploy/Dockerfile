@@ -6,7 +6,7 @@ RUN pip install cython bosdyn-client bosdyn-mission bosdyn-api bosdyn-core empy 
 RUN bash /opt/ros/noetic/setup.bash
 
 # Download ROS packages
-RUN mkdir ~/catkin_ws/src
+RUN mkdir -p ~/catkin_ws/src
 WORKDIR ~/catkin_ws/src
 
 # Install ROS dependencies
