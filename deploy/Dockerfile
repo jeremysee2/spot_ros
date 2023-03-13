@@ -1,4 +1,4 @@
-FROM ros:noetic-ros-base-focal
+FROM ros:noetic
 
 RUN DEBIAN_FRONTEND=noninteractive apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y git
