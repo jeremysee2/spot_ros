@@ -4,6 +4,7 @@ on: [push]
 
 jobs:
   build:
+    container: public.ecr.aws/docker/library/ros:noetic
     runs-on: ubuntu-latest
     defaults:
       run:
