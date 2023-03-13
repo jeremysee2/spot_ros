@@ -27,4 +27,4 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/spot_ros:latest
           secrets: |
             "SPOT_PASSWORD=${{ secrets.SPOT_PASSWORD }}"
-            "SPOTROS_GIT_BRANCH=${{ GITHUB_REF##*/ }}"
+            "SPOTROS_GIT_BRANCH=${{ github.ref }}##*/"
