@@ -19,11 +19,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Extract branch name
-        # run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         run: echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
         id: extract_branch
       - name: Print branch name
-        run: echo {GITHUB_REF#refs/heads/} && echo ${{ steps.extract_branch.outputs.branch }}
+        run: echo ${{ steps.extract_branch.outputs.branch }}
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
