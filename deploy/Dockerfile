@@ -10,7 +10,7 @@ WORKDIR ~/catkin_ws/src
 RUN --mount=type=secret,id=SPOTROS_GIT_BRANCH \
    export SPOTROS_GIT_BRANCH=$(cat /run/secrets/SPOTROS_GIT_BRANCH) && \
    echo $SPOTROS_GIT_BRANCH && \
-   git clone -b $SPOTROS_GIT_BRANCH https://github.com/jeremysee2/spot_ros.git
+   git clone -b $SPOTROS_GIT_BRANCH https://github.com/jeremysee2/spot_ros.git ~/catkin_ws/src/spot_ros
 
 RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
 RUN pip install cython bosdyn-client bosdyn-mission bosdyn-api bosdyn-core empy numpy
@@ -18,9 +18,10 @@ RUN bash /opt/ros/noetic/setup.bash
 
 # Install ROS dependencies
 WORKDIR ~/catkin_ws/
-RUN rosdep install --from-paths src --ignore-src -y
+RUN rosdep install --from-paths ~/catkin_ws/src --ignore-src -y
 
 # Build ROS packages
+WORKDIR ~/catkin_ws/
 RUN catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Source the new packages
