@@ -24,7 +24,7 @@ RUN rosdep install --from-paths /ros/catkin_ws/src --ignore-src -y
 WORKDIR /ros/catkin_ws/
 RUN bash /opt/ros/noetic/setup.bash
 RUN pwd
-RUN catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release
+RUN /opt/ros/noetic/bin/catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Source the new packages
 RUN bash /ros/catkin_ws/devel/setup.bash
