@@ -18,11 +18,12 @@ RUN /bin/bash /opt/ros/noetic/setup.bash
 
 # Install ROS dependencies
 WORKDIR /ros/catkin_ws/
-RUN /bin/bash -c rosdep install --from-paths /ros/catkin_ws/src --ignore-src -y
+
+RUN ["/bin/bash", "-c", "rosdep install --from-paths /ros/catkin_ws/src --ignore-src -y"]
 
 # Build ROS packages
 WORKDIR /ros/catkin_ws/
-RUN /bin/bash -c /opt/ros/noetic/bin/catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release
+RUN ["/bin/bash", "-c", "/opt/ros/noetic/bin/catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release"]
 
 # Source the new packages
 RUN /bin/bash /ros/catkin_ws/devel/setup.bash
@@ -35,4 +36,4 @@ ARG SPOT_VELODYNE=1
 ARG SPOT_USERNAME=admin
 ARG SPOT_PASSWORD=dummypassword
 
-ENTRYPOINT /bin/bash -c roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD
+RUN ["/bin/bash", "-c", "roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD"]
