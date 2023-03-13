@@ -1,5 +1,6 @@
 FROM ros:noetic-ros-base-focal
 
+RUN apt install update
 RUN apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
 RUN pip install -r requirements.txt
 RUN source /opt/ros/noetic/setup.bash
