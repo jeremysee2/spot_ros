@@ -1,7 +1,0 @@
-cython
-bosdyn-client
-bosdyn-mission
-bosdyn-api
-bosdyn-core
-empy
-numpy

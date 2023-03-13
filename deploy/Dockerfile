@@ -2,7 +2,7 @@ FROM ros:noetic-ros-base-focal
 
 RUN DEBIAN_FRONTEND=noninteractive apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
-RUN pip install -r requirements.txt
+RUN pip install cython bosdyn-client bosdyn-mission bosdyn-api bosdyn-core empy numpy
 RUN source /opt/ros/noetic/setup.bash
 
 # Download ROS packages
