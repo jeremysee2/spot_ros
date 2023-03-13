@@ -3,18 +3,14 @@ FROM ros:noetic-ros-base-focal
 RUN DEBIAN_FRONTEND=noninteractive apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y git
 
-# Get the secrets from Github Actions
-RUN --mount=type=secret,id=SPOTROS_GIT_BRANCH \
-  --mount=type=secret,id=SPOT_PASSWORD \
-   export SPOTROS_GIT_BRANCH=$(cat /run/secrets/SPOTROS_GIT_BRANCH) && \
-   export SPOT_PASSWORD=$(cat /run/secrets/SPOT_PASSWORD)
-
 # Download the Spot ROS packages
 RUN mkdir -p ~/catkin_ws/src
 WORKDIR ~/catkin_ws/src
-RUN echo $SPOTROS_GIT_BRANCH
-RUN echo $SPOT_PASSWORD
-RUN git clone -b $SPOTROS_GIT_BRANCH https://github.com/jeremysee2/spot_ros.git
+# Get the secrets from Github Actions
+RUN --mount=type=secret,id=SPOTROS_GIT_BRANCH \
+   export SPOTROS_GIT_BRANCH=$(cat /run/secrets/SPOTROS_GIT_BRANCH) && \
+   echo $SPOTROS_GIT_BRANCH && \
+   git clone -b $SPOTROS_GIT_BRANCH https://github.com/jeremysee2/spot_ros.git
 
 RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
 RUN pip install cython bosdyn-client bosdyn-mission bosdyn-api bosdyn-core empy numpy
@@ -36,5 +32,6 @@ ARG SPOT_PACK=1
 ARG SPOT_LIDAR_MOUNT=1
 ARG SPOT_VELODYNE=1
 ARG SPOT_USERNAME=admin
+ARG SPOT_PASSWORD=dummypassword
 
 ENTRYPOINT roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD
