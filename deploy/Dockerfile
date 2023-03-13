@@ -6,8 +6,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y git
 # Download the Spot ROS packages
 RUN mkdir -p ~/catkin_ws/src
 WORKDIR ~/catkin_ws/src
-RUN echo $SPOTROS_GIT_BRANCH
-RUN git clone -b $SPOTROS_GIT_BRANCH https://github.com/jeremysee2/spot_ros.git
+RUN echo SPOTROS_GIT_BRANCH
+RUN git clone -b SPOTROS_GIT_BRANCH https://github.com/jeremysee2/spot_ros.git
 
 RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
 RUN pip install cython bosdyn-client bosdyn-mission bosdyn-api bosdyn-core empy numpy
@@ -30,4 +30,4 @@ ARG SPOT_LIDAR_MOUNT=1
 ARG SPOT_VELODYNE=1
 ARG SPOT_USERNAME=admin
 
-ENTRYPOINT roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD
+ENTRYPOINT roslaunch spot_driver driver.launch username:=admin password:=SPOT_PASSWORD
