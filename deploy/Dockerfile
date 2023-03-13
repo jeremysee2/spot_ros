@@ -13,6 +13,7 @@ RUN --mount=type=secret,id=SPOTROS_GIT_BRANCH \
 RUN mkdir -p ~/catkin_ws/src
 WORKDIR ~/catkin_ws/src
 RUN echo $SPOTROS_GIT_BRANCH
+RUN echo $SPOT_PASSWORD
 RUN git clone -b $SPOTROS_GIT_BRANCH https://github.com/jeremysee2/spot_ros.git
 
 RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
