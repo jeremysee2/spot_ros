@@ -22,7 +22,7 @@ WORKDIR /ros/catkin_ws/
 
 RUN rosdep install --from-paths /ros/catkin_ws/src --ignore-src -y
 
-# Build ROS packages
+# Build ROS packages, remember to source the setup.bash file in the same command
 WORKDIR /ros/catkin_ws/
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && \
     catkin_make"
@@ -38,4 +38,5 @@ ARG SPOT_VELODYNE=1
 ARG SPOT_USERNAME=admin
 ARG SPOT_PASSWORD=dummypassword
 
-RUN roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD
+ENTRYPOINT /bin/bash -c "source /ros/catkin_ws/devel/setup.sh && \
+    roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD"
