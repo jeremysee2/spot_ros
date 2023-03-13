@@ -1,7 +1,7 @@
 FROM ros:noetic-ros-base-focal
 
-RUN apt update
-RUN apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
+RUN DEBIAN_FRONTEND=noninteractive apt update
+RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros
 RUN pip install -r requirements.txt
 RUN source /opt/ros/noetic/setup.bash
 
@@ -24,7 +24,6 @@ ARG SPOT_ARM=1
 ARG SPOT_PACK=1
 ARG SPOT_LIDAR_MOUNT=1
 ARG SPOT_VELODYNE=1
-
 ARG SPOT_USERNAME=admin
 
 ENTRYPOINT roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD
