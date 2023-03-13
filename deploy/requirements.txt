@@ -4,3 +4,4 @@ bosdyn-mission
 bosdyn-api
 bosdyn-core
 empy
+numpy
