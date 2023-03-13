@@ -14,6 +14,7 @@ RUN --mount=type=secret,id=SPOTROS_GIT_BRANCH \
 
 RUN DEBIAN_FRONTEND=noninteractive apt install -y python3-pip git qttools5-dev ros-noetic-tf2-bullet ros-noetic-roslint ros-noetic-pcl-ros ros-noetic-catkin python3-catkin-pkg
 RUN python3 -m pip install cython bosdyn-client bosdyn-mission bosdyn-api bosdyn-core empy numpy
+RUN chmod +x /opt/ros/noetic/setup.sh
 RUN /opt/ros/noetic/setup.sh
 
 # Install ROS dependencies
@@ -26,6 +27,7 @@ WORKDIR /ros/catkin_ws/
 RUN /opt/ros/noetic/bin/catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Source the new packages
+RUN chmod +x /ros/catkin_ws/devel/setup.sh
 RUN /ros/catkin_ws/devel/setup.sh
 
 # Setup the environmental variables for including these in the URDF
