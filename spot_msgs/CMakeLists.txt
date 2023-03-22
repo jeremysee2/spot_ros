@@ -49,6 +49,11 @@ add_message_files(
   ImageSource.msg
   WorldObject.msg
   WorldObjectArray.msg
+  StraightStaircase.msg
+  GraphNavAnchoring.msg
+  GraphNavEdge.msg
+  GraphNavGraph.msg
+  GraphNavWaypoint.msg
 )
 
 add_service_files(
