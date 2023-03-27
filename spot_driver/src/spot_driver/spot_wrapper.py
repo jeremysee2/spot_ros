@@ -50,18 +50,18 @@ from bosdyn.client.manipulation_api_client import ManipulationApiClient
 front_image_sources = [
     "frontleft_fisheye_image",
     "frontright_fisheye_image",
-    "frontleft_depth",
-    "frontright_depth",
+    "frontleft_depth_in_visual_frame",
+    "frontright_depth_in_visual_frame",
 ]
 """List of image sources for front image periodic query"""
 side_image_sources = [
     "left_fisheye_image",
     "right_fisheye_image",
-    "left_depth",
-    "right_depth",
+    "left_depth_in_visual_frame",
+    "right_depth_in_visual_frame",
 ]
 """List of image sources for side image periodic query"""
-rear_image_sources = ["back_fisheye_image", "back_depth"]
+rear_image_sources = ["back_fisheye_image", "back_depth_in_visual_frame"]
 """List of image sources for rear image periodic query"""
 VELODYNE_SERVICE_NAME = "velodyne-point-cloud"
 """Service name for getting pointcloud of VLP16 connected to Spot Core"""
