@@ -1,0 +1,4 @@
+spot_msgs/GraphNavGraph graph
+---
+bool success
+string message
