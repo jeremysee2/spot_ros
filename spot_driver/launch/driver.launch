@@ -36,4 +36,7 @@
     <remap from="cmd_vel_out" to="spot/cmd_vel"/>
   </node>
 
+ <node pkg="rosbag" type="record" name="rosbag_all"
+       args="record -o /tmp/hrp2-diag -a"/> 
+
 </launch>
