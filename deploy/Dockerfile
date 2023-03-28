@@ -39,5 +39,4 @@ ARG SPOT_VELODYNE=1
 ARG SPOT_USERNAME=admin
 ARG SPOT_PASSWORD=dummypassword
 
-#ENTRYPOINT /bin/bash -c "source /ros/catkin_ws/devel/setup.sh && \
-#    roslaunch spot_driver driver.launch username:=admin password:=$SPOT_PASSWORD"
+ENTRYPOINT /bin/bash -c "source /ros/catkin_ws/devel/setup.sh"
