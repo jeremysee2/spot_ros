@@ -1,6 +1,6 @@
 <launch>
-  <arg name="username" default="dummyusername" />
-  <arg name="password" default="dummypassword" />
+  <arg name="username" default="admin" />
+  <arg name="password" default="7ri6vylnf960" />
   <arg name="hostname" default="192.168.80.3" />
   <arg name="estop_timeout" default="9.0"/>
   <arg name="autonomy_enabled" default="true"/>
@@ -35,8 +35,5 @@
     <rosparam command="load" file="$(find spot_driver)/config/twist_mux.yaml" />
     <remap from="cmd_vel_out" to="spot/cmd_vel"/>
   </node>
-
- <node pkg="rosbag" type="record" name="rosbag_all"
-       args="record -o /tmp/hrp2-diag -a"/> 
-
+  
 </launch>
