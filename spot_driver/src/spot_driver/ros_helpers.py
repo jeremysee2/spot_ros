@@ -28,11 +28,14 @@ from spot_msgs.msg import (
     ImageProperties,
 )
 from spot_msgs.msg import FrameTreeSnapshot, ParentEdge
+from spot_msgs.msg import GraphNavGraph, GraphNavWaypoint
 from spot_msgs.srv import SpotCheckResponse
+from spot_msgs.srv import UploadGraphRequest, UploadGraphResponse
 
 from bosdyn.api import image_pb2, robot_state_pb2, point_cloud_pb2
 from bosdyn.api import world_object_pb2, geometry_pb2
 from bosdyn.api.docking import docking_pb2
+from bosdyn.api.graph_nav import map_pb2
 from bosdyn.client.spot_check import spot_check_pb2
 from bosdyn.client.math_helpers import SE3Pose
 from bosdyn.client.frame_helpers import get_odom_tform_body, get_vision_tform_body
@@ -970,3 +973,196 @@ def GetWorldObjectsMsg(
         world_object_msg.world_objects.append(new_world_object)
 
     return world_object_msg
+
+
+def GetGraphNavGraphMsg(data: UploadGraphRequest) -> map_pb2.Graph:
+    """Build the Graph message for the upload_graph RPC call, from the ROS service message"""
+
+    """ protobuf definition for map_pb2.Graph
+    message Graph {
+        // The waypoints for the graph (containing frames, annotations, and sensor data).
+        repeated Waypoint waypoints = 1;
+        // The edges connecting the graph's waypoints.
+        repeated Edge edges = 2;
+
+        // The anchoring (mapping from waypoints to their pose in a shared reference frame).
+        Anchoring anchoring = 3;
+    }
+
+
+
+message Waypoint {
+    // Identifier of the waypoint. Unique across all maps.
+    // This identifier does not have to be updated when its fields change.
+    string id = 1;
+
+    // Identifier of this waypoint's Snapshot data.
+    string snapshot_id = 2;
+
+    // Transform from the KO frame (at time of recording) to the waypoint.
+    SE3Pose waypoint_tform_ko = 3;
+
+    enum WaypointSource {
+        WAYPOINT_SOURCE_UNKNOWN = 0;
+        // Waypoints from the robot's location during recording.
+        WAYPOINT_SOURCE_ROBOT_PATH = 1;
+        // Waypoints with user-requested placement.
+        WAYPOINT_SOURCE_USER_REQUEST = 2;
+        // Waypoints that may help find alternate routes.
+        WAYPOINT_SOURCE_ALTERNATE_ROUTE_FINDING = 3;
+    };
+
+    // Annotations understood by BostonDynamics systems.
+    message Annotations {
+        // Human-friendly name of the waypoint. For example, "Kitchen Fridge"
+        string name = 1;
+
+        // The time that the waypoint was created while recording a map.
+        google.protobuf.Timestamp creation_time = 4;
+
+        // Estimate of the variance of ICP when performed at this waypoint, collected at record time.
+        bosdyn.api.SE3Covariance icp_variance = 2;
+
+        message LocalizeRegion {
+            // Check this before reading other fields.
+            AnnotationState state = 1;
+
+            // Use the default region to localize in.
+            message Default {
+            }
+            // Do not localize to this waypoint.
+            message Empty {
+            }
+            // Indicates the number of meters away we can be from this waypoint we can be before scan
+            // matching.
+            // - If zero, the default value is used.
+            // - If less than zero, no scan matching will be performed at this waypoint.
+            // - If greater than zero, scan matching will only be performed if the robot is at most this
+            //   far away from the waypoint.
+            // Distance calculation is done in the 2d plane with respect to the waypoint.
+            message Circle2D {
+                double dist_2d = 1; // meters.
+            }
+
+            oneof region {
+                // Oneof field that describes the waypoint's location as a default region (no special features/traits).
+                Default default_region = 2;
+                // Oneof field that describes the waypoint's location as a empty/featureless region.
+                Empty empty = 3;
+                // Oneof field that describes the waypoint's location as a circular region.
+                Circle2D circle = 4;
+            }
+        }
+        // Options for how to localize to a waypoint (if at all).
+        LocalizeRegion scan_match_region = 3;
+
+        // How this waypoint was made.
+        WaypointSource waypoint_source = 5;
+
+        // Information about the state of the client when this waypoint was created.
+        ClientMetadata client_metadata = 6;
+    }
+    // Annotations specific to the current waypoint.
+    Annotations annotations = 4;
+}
+    """
+
+    graph: GraphNavGraph = data.graph
+    graph_msg = map_pb2.Graph()
+
+    # Waypoints
+    for waypoint in graph.waypoints:
+        waypoint: GraphNavWaypoint = waypoint  # temp for linting
+        new_waypoint = map_pb2.Waypoint()
+        new_waypoint.id = waypoint.id
+        new_waypoint.snapshot_id = waypoint.snapshot_id
+        new_waypoint.waypoint_tform_ko = geometry_pb2.SE3Pose(
+            position=geometry_pb2.Vec3(
+                x=waypoint.waypoint_tform_ko.position.x,
+                y=waypoint.waypoint_tform_ko.position.y,
+                z=waypoint.waypoint_tform_ko.position.z,
+            ),
+            rotation=geometry_pb2.Quaternion(
+                x=waypoint.waypoint_tform_ko.orientation.x,
+                y=waypoint.waypoint_tform_ko.orientation.y,
+                z=waypoint.waypoint_tform_ko.orientation.z,
+                w=waypoint.waypoint_tform_ko.orientation.w,
+            ),
+        )
+        new_waypoint.annotations.name = waypoint.name
+        new_waypoint.annotations.creation_time = waypoint.creation_time
+        # Row-major covariance matrix
+        new_waypoint.annotations.icp_variance = geometry_pb2.SE3Covariance(
+            geometry_pb2.Matrix(
+                rows=6,
+                cols=6,
+                values=[
+                    waypoint.icp_variance[0][0],
+                    waypoint.icp_variance[0][1],
+                    waypoint.icp_variance[0][2],
+                    waypoint.icp_variance[0][3],
+                    waypoint.icp_variance[0][4],
+                    waypoint.icp_variance[0][5],
+                    waypoint.icp_variance[1][0],
+                    waypoint.icp_variance[1][1],
+                    waypoint.icp_variance[1][2],
+                    waypoint.icp_variance[1][3],
+                    waypoint.icp_variance[1][4],
+                    waypoint.icp_variance[1][5],
+                    waypoint.icp_variance[2][0],
+                    waypoint.icp_variance[2][1],
+                    waypoint.icp_variance[2][2],
+                    waypoint.icp_variance[2][3],
+                    waypoint.icp_variance[2][4],
+                    waypoint.icp_variance[2][5],
+                    waypoint.icp_variance[3][0],
+                    waypoint.icp_variance[3][1],
+                    waypoint.icp_variance[3][2],
+                    waypoint.icp_variance[3][3],
+                    waypoint.icp_variance[3][4],
+                    waypoint.icp_variance[3][5],
+                    waypoint.icp_variance[4][0],
+                    waypoint.icp_variance[4][1],
+                    waypoint.icp_variance[4][2],
+                    waypoint.icp_variance[4][3],
+                    waypoint.icp_variance[4][4],
+                    waypoint.icp_variance[4][5],
+                    waypoint.icp_variance[5][0],
+                    waypoint.icp_variance[5][1],
+                    waypoint.icp_variance[5][2],
+                    waypoint.icp_variance[5][3],
+                    waypoint.icp_variance[5][4],
+                    waypoint.icp_variance[5][5],
+                ],
+            )
+        )
+        new_waypoint.annotations.scan_match_region.state = (
+            waypoint.scan_match_region_state
+        )
+        if waypoint.default_region:
+            new_waypoint.annotations.scan_match_region.region = (
+                map_pb2.Waypoint.Annotations.LocalizeRegion.Default()
+            )
+        elif waypoint.empty:
+            new_waypoint.annotations.scan_match_region.region = (
+                map_pb2.Waypoint.Annotations.LocalizeRegion.Empty()
+            )
+        elif waypoint.circle_2d:
+            new_waypoint.annotations.scan_match_region.region = (
+                map_pb2.Waypoint.Annotations.LocalizeRegion.Circle2D(
+                    dist_2d=waypoint.circle_region_dist_2d
+                )
+            )
+
+        new_waypoint.annotations.waypoint_source = waypoint.waypoint_source
+        new_waypoint.annotations.client_metadata = map_pb2.ClientMetadata(
+            session_name=waypoint.session_name,
+            client_username=waypoint.client_username,
+            client_software_version=waypoint.client_software_version,
+            client_id=waypoint.client_id,
+            client_type=waypoint.client_type,
+        )
+
+        graph_msg.waypoints.append(new_waypoint)
+
+    return graph_msg
