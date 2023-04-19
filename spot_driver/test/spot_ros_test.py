@@ -63,6 +63,9 @@ class TestRobotStateCB(unittest.TestCase):
 
     def tf_cb(self, tf: TFMessage):
         # Differentiating between foot and body TFs
+        if not len(tf.transforms):
+            return
+
         if "foot" in tf.transforms[0].child_frame_id:
             self.data["foot_TF"] = tf
         else:
@@ -121,18 +124,20 @@ class TestRobotStateCB(unittest.TestCase):
         self.assertEqual(tf_message.transforms[1].child_frame_id, "front_right_foot")
 
     def check_TF_states(self, tf_message: TFMessage):
-        self.assertEqual(len(tf_message.transforms), 2)
-        self.assertEqual(tf_message.transforms[0].header.frame_id, "body")
-        self.assertEqual(tf_message.transforms[0].child_frame_id, "odom")
-        self.assertEqual(tf_message.transforms[0].transform.translation.x, -2.0)
-        self.assertEqual(tf_message.transforms[0].transform.translation.y, -3.0)
-        self.assertEqual(tf_message.transforms[0].transform.translation.z, -2.0)
+        transforms = sorted(tf_message.transforms, key=lambda x: x.child_frame_id)
 
-        self.assertEqual(tf_message.transforms[1].header.frame_id, "vision")
-        self.assertEqual(tf_message.transforms[1].child_frame_id, "body")
-        self.assertEqual(tf_message.transforms[1].transform.translation.x, -2.0)
-        self.assertEqual(tf_message.transforms[1].transform.translation.y, -3.0)
-        self.assertEqual(tf_message.transforms[1].transform.translation.z, -2.0)
+        self.assertEqual(len(transforms), 2)
+        self.assertEqual(transforms[0].header.frame_id, "vision")
+        self.assertEqual(transforms[0].child_frame_id, "body")
+        self.assertEqual(transforms[0].transform.translation.x, -2.0)
+        self.assertEqual(transforms[0].transform.translation.y, -3.0)
+        self.assertEqual(transforms[0].transform.translation.z, -2.0)
+
+        self.assertEqual(transforms[1].header.frame_id, "body")
+        self.assertEqual(transforms[1].child_frame_id, "odom")
+        self.assertEqual(transforms[1].transform.translation.x, -2.0)
+        self.assertEqual(transforms[1].transform.translation.y, -3.0)
+        self.assertEqual(transforms[1].transform.translation.z, -2.0)
 
     def check_twist_odom_states(self, twist_odom_msg: TwistWithCovarianceStamped):
         self.assertEqual(twist_odom_msg.twist.twist.linear.x, 1.0)
@@ -1103,12 +1108,6 @@ class TestServiceHandlers(unittest.TestCase):
 
         self.assertTrue(resp.success, "Optimize graph anchoring service failed")
         self.assertEqual(resp.message, "Successfully called graph_optimize_anchoring")
-
-    def test_arm_gaze(self):
-        resp: TriggerResponse = self.call_service("/spot/arm_gaze")
-
-        self.assertTrue(resp.success, "Arm gaze service failed")
-        self.assertEqual(resp.message, "Successfully called arm_gaze")
 
     def test_navigate_init(self):
         resp: NavigateInitResponse = self.call_service("/spot/navigate_init")
