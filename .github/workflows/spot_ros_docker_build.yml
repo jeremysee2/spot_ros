@@ -1,6 +1,10 @@
 name: Docker image upload
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
   build:
