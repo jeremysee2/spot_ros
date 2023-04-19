@@ -4,6 +4,8 @@ NAME = "spot_ros_test"
 SUITE = "spot_ros_test.TestSuiteSpotROS"
 
 import time
+import typing
+import sys
 import unittest
 
 import rospy
@@ -22,7 +24,7 @@ from spot_msgs.msg import Metrics
 from spot_msgs.msg import LeaseArray
 from spot_msgs.msg import FootStateArray
 from spot_msgs.msg import EStopStateArray
-from spot_msgs.msg import WorldObjectArray
+from spot_msgs.msg import WorldObjectArray, WorldObject
 from spot_msgs.msg import WiFiState
 from spot_msgs.msg import PowerState
 from spot_msgs.msg import BehaviorFaultState
@@ -68,6 +70,8 @@ class TestRobotStateCB(unittest.TestCase):
 
         if "foot" in tf.transforms[0].child_frame_id:
             self.data["foot_TF"] = tf
+        elif "fiducial" in tf.transforms[0].child_frame_id:
+            self.data["fiducial_TF"] = tf
         else:
             self.data["TF"] = tf
 
@@ -795,7 +799,17 @@ class TestWorldObjectCB(unittest.TestCase):
         self.data["world_object"] = msg
 
     def check_world_object(self, world_object_msg: WorldObjectArray):
-        pass
+        # Check that the world object message is correctly populated
+        world_objects: typing.List[WorldObject] = sorted(
+            world_object_msg.world_objects, key=lambda x: x.id
+        )
+
+        self.assertEqual(world_objects[0].id, 1)
+        self.assertEqual(world_objects[0].name, "world_obj_apriltag_350")
+        self.assertEqual(
+            sorted(world_objects[0].frame_tree_snapshot.child_edges),
+            sorted(["vision", "fiducial_350", "filtered_fiducial_350", "body", "odom"]),
+        )
 
     def test_world_object_cb(self):
         self.world_object = rospy.Subscriber(

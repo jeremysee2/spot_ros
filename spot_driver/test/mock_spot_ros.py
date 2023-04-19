@@ -696,7 +696,7 @@ class MockSpotROS:
                         parent_tform_child=geometry_pb2.SE3Pose(
                             position=geometry_pb2.Vec3(x=-8.0, y=-24.0, z=-0.5),
                             rotation=geometry_pb2.Quaternion(
-                                x=0.0, y=0.0, z=-1.0, w=1.0
+                                x=0.0, y=0.0, z=0.0, w=1.0
                             ),
                         ),
                     ),
@@ -705,7 +705,7 @@ class MockSpotROS:
                         parent_tform_child=geometry_pb2.SE3Pose(
                             position=geometry_pb2.Vec3(x=-7.0, y=-25.0, z=0.0),
                             rotation=geometry_pb2.Quaternion(
-                                x=-1.5, y=0.0, z=0.8, w=0.5
+                                x=-0.78, y=0.17, z=0.55, w=0.21
                             ),
                         ),
                     ),
@@ -714,7 +714,7 @@ class MockSpotROS:
                         parent_tform_child=geometry_pb2.SE3Pose(
                             position=geometry_pb2.Vec3(x=-11.0, y=-24.0, z=0.45),
                             rotation=geometry_pb2.Quaternion(
-                                x=0.47, y=0.50, z=0.51, w=-0.46
+                                x=0.52, y=0.37, z=0.46, w=-0.61
                             ),
                         ),
                     ),
@@ -723,7 +723,7 @@ class MockSpotROS:
                         parent_tform_child=geometry_pb2.SE3Pose(
                             position=geometry_pb2.Vec3(x=0.27, y=-0.2, z=0.61),
                             rotation=geometry_pb2.Quaternion(
-                                x=0.73, y=-0.66, z=0.0, w=-0.11
+                                x=0.16, y=-0.50, z=0.83, w=-0.20
                             ),
                         ),
                     ),

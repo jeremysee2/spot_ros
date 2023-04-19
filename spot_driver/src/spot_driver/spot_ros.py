@@ -376,7 +376,7 @@ class SpotROS:
             data.world_objects, self.spot_wrapper, self.mode_parent_odom_tf
         )
         if len(tf_msg.transforms) > 0:
-            self.tf_dynamic_broadcaster.sendTransform(tf_msg)
+            self.tf_pub.publish(tf_msg)
 
     def handle_claim(self, req) -> TriggerResponse:
         """ROS service handler for the claim service"""
@@ -1571,7 +1571,6 @@ class SpotROS:
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
-        self.tf_dynamic_broadcaster = tf2_ros.TransformBroadcaster()
         self.sensors_static_transform_broadcaster = tf2_ros.StaticTransformBroadcaster()
         # Static transform broadcaster is super simple and just a latched publisher. Every time we add a new static
         # transform we must republish all static transforms from this source, otherwise the tree will be incomplete.

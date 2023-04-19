@@ -114,7 +114,10 @@ class DefaultCameraInfo(CameraInfo):
 
 
 def populateTransformStamped(
-    time: rospy.Time, parent_frame: str, child_frame: str, transform: Transform
+    time: rospy.Time,
+    parent_frame: str,
+    child_frame: str,
+    transform: Transform,
 ) -> TransformStamped:
     """Populates a TransformStamped message
 
@@ -1141,10 +1144,12 @@ def GetTFFromWorldObjects(
                     world_object.acquisition_time
                 )
                 tf_time = rospy.Time(secs=local_time.seconds, nsecs=local_time.nanos)
-                new_tf = populateTransformStamped(
-                    tf_time, parent_frame, frame, transform, spot_wrapper.frame_prefix
-                )
-                tf_msg.transforms.append(new_tf)
+                if transform:
+                    new_tf = populateTransformStamped(
+                        tf_time, parent_frame, frame, transform
+                    )
+                    tf_msg.transforms.append(new_tf)
+
             except Exception as e:
                 spot_wrapper.logger.error("Error: {}".format(e))
     return tf_msg
@@ -1152,7 +1157,7 @@ def GetTFFromWorldObjects(
 
 def bosdyn_data_to_image_and_camera_info_msgs(
     data: image_pb2.ImageResponse, spot_wrapper: SpotWrapper
-):
+) -> typing.Tuple[Image, CameraInfo]:
     """Takes the image and camera data and populates the necessary ROS messages
     Args:
         spot_wrapper: SpotWrapper
@@ -1165,9 +1170,7 @@ def bosdyn_data_to_image_and_camera_info_msgs(
     image_msg = Image()
     local_time = spot_wrapper.robotToLocalTime(data.shot.acquisition_time)
     image_msg.header.stamp = rospy.Time(secs=local_time.seconds, nsecs=local_time.nanos)
-    image_msg.header.frame_id = (
-        spot_wrapper.frame_prefix + data.shot.frame_name_image_sensor
-    )
+    image_msg.header.frame_id = data.shot.frame_name_image_sensor
     image_msg.height = data.shot.image.rows
     image_msg.width = data.shot.image.cols
 
@@ -1213,36 +1216,36 @@ def bosdyn_data_to_image_and_camera_info_msgs(
     camera_info_msg = CameraInfo()
     camera_info_msg.distortion_model = "plumb_bob"
 
-    camera_info_msg.d.append(0)
-    camera_info_msg.d.append(0)
-    camera_info_msg.d.append(0)
-    camera_info_msg.d.append(0)
-    camera_info_msg.d.append(0)
+    camera_info_msg.D.append(0)
+    camera_info_msg.D.append(0)
+    camera_info_msg.D.append(0)
+    camera_info_msg.D.append(0)
+    camera_info_msg.D.append(0)
 
-    camera_info_msg.k[1] = 0
-    camera_info_msg.k[3] = 0
-    camera_info_msg.k[6] = 0
-    camera_info_msg.k[7] = 0
-    camera_info_msg.k[8] = 1
+    camera_info_msg.K[1] = 0
+    camera_info_msg.K[3] = 0
+    camera_info_msg.K[6] = 0
+    camera_info_msg.K[7] = 0
+    camera_info_msg.K[8] = 1
 
-    camera_info_msg.r[0] = 1
-    camera_info_msg.r[1] = 0
-    camera_info_msg.r[2] = 0
-    camera_info_msg.r[3] = 0
-    camera_info_msg.r[4] = 1
-    camera_info_msg.r[5] = 0
-    camera_info_msg.r[6] = 0
-    camera_info_msg.r[7] = 0
-    camera_info_msg.r[8] = 1
+    camera_info_msg.R[0] = 1
+    camera_info_msg.R[1] = 0
+    camera_info_msg.R[2] = 0
+    camera_info_msg.R[3] = 0
+    camera_info_msg.R[4] = 1
+    camera_info_msg.R[5] = 0
+    camera_info_msg.R[6] = 0
+    camera_info_msg.R[7] = 0
+    camera_info_msg.R[8] = 1
 
-    camera_info_msg.p[1] = 0
-    camera_info_msg.p[3] = 0
-    camera_info_msg.p[4] = 0
-    camera_info_msg.p[7] = 0
-    camera_info_msg.p[8] = 0
-    camera_info_msg.p[9] = 0
-    camera_info_msg.p[10] = 1
-    camera_info_msg.p[11] = 0
+    camera_info_msg.P[1] = 0
+    camera_info_msg.P[3] = 0
+    camera_info_msg.P[4] = 0
+    camera_info_msg.P[7] = 0
+    camera_info_msg.P[8] = 0
+    camera_info_msg.P[9] = 0
+    camera_info_msg.P[10] = 1
+    camera_info_msg.P[11] = 0
     local_time = spot_wrapper.robotToLocalTime(data.shot.acquisition_time)
     camera_info_msg.header.stamp = rospy.Time(
         secs=local_time.seconds, nsecs=local_time.nanos
@@ -1251,14 +1254,14 @@ def bosdyn_data_to_image_and_camera_info_msgs(
     camera_info_msg.height = data.shot.image.rows
     camera_info_msg.width = data.shot.image.cols
 
-    camera_info_msg.k[0] = data.source.pinhole.intrinsics.focal_length.x
-    camera_info_msg.k[2] = data.source.pinhole.intrinsics.principal_point.x
-    camera_info_msg.k[4] = data.source.pinhole.intrinsics.focal_length.y
-    camera_info_msg.k[5] = data.source.pinhole.intrinsics.principal_point.y
+    camera_info_msg.K[0] = data.source.pinhole.intrinsics.focal_length.x
+    camera_info_msg.K[2] = data.source.pinhole.intrinsics.principal_point.x
+    camera_info_msg.K[4] = data.source.pinhole.intrinsics.focal_length.y
+    camera_info_msg.K[5] = data.source.pinhole.intrinsics.principal_point.y
 
-    camera_info_msg.p[0] = data.source.pinhole.intrinsics.focal_length.x
-    camera_info_msg.p[2] = data.source.pinhole.intrinsics.principal_point.x
-    camera_info_msg.p[5] = data.source.pinhole.intrinsics.focal_length.y
-    camera_info_msg.p[6] = data.source.pinhole.intrinsics.principal_point.y
+    camera_info_msg.P[0] = data.source.pinhole.intrinsics.focal_length.x
+    camera_info_msg.P[2] = data.source.pinhole.intrinsics.principal_point.x
+    camera_info_msg.P[5] = data.source.pinhole.intrinsics.focal_length.y
+    camera_info_msg.P[6] = data.source.pinhole.intrinsics.principal_point.y
 
     return image_msg, camera_info_msg
