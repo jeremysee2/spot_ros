@@ -279,6 +279,78 @@ class SpotROS:
 
             self.lease_pub.publish(lease_array_msg)
 
+    def publish_depth_in_visual_images_callback(self):
+        image_bundle = self.spot_wrapper.spot_images.get_depth_registered_images()
+        (
+            frontleft_image_msg,
+            frontleft_camera_info,
+        ) = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.frontleft, self.spot_wrapper
+        )
+        (
+            frontright_image_msg,
+            frontright_camera_info,
+        ) = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.frontright, self.spot_wrapper
+        )
+        left_image_msg, left_camera_info = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.left, self.spot_wrapper
+        )
+        right_image_msg, right_camera_info = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.right, self.spot_wrapper
+        )
+        back_image_msg, back_camera_info = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.back, self.spot_wrapper
+        )
+
+        self.frontleft_depth_in_visual_pub.publish(frontleft_image_msg)
+        self.frontright_depth_in_visual_pub.publish(frontright_image_msg)
+        self.left_depth_in_visual_pub.publish(left_image_msg)
+        self.right_depth_in_visual_pub.publish(right_image_msg)
+        self.back_depth_in_visual_pub.publish(back_image_msg)
+
+        self.frontleft_depth_in_visual_info_pub.publish(frontleft_camera_info)
+        self.frontright_depth_in_visual_info_pub.publish(frontright_camera_info)
+        self.left_depth_in_visual_info_pub.publish(left_camera_info)
+        self.right_depth_in_visual_info_pub.publish(right_camera_info)
+        self.back_depth_in_visual_info_pub.publish(back_camera_info)
+
+    def publish_depth_images_callback(self):
+        image_bundle = self.spot_wrapper.spot_images.get_depth_images()
+        (
+            frontleft_image_msg,
+            frontleft_camera_info,
+        ) = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.frontleft, self.spot_wrapper
+        )
+        (
+            frontright_image_msg,
+            frontright_camera_info,
+        ) = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.frontright, self.spot_wrapper
+        )
+        left_image_msg, left_camera_info = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.left, self.spot_wrapper
+        )
+        right_image_msg, right_camera_info = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.right, self.spot_wrapper
+        )
+        back_image_msg, back_camera_info = bosdyn_data_to_image_and_camera_info_msgs(
+            image_bundle.back, self.spot_wrapper
+        )
+
+        self.frontleft_depth_pub.publish(frontleft_image_msg)
+        self.frontright_depth_pub.publish(frontright_image_msg)
+        self.left_depth_pub.publish(left_image_msg)
+        self.right_depth_pub.publish(right_image_msg)
+        self.back_depth_pub.publish(back_image_msg)
+
+        self.frontleft_depth_info_pub.publish(frontleft_camera_info)
+        self.frontright_depth_info_pub.publish(frontright_camera_info)
+        self.left_depth_info_pub.publish(left_camera_info)
+        self.right_depth_info_pub.publish(right_camera_info)
+        self.back_depth_info_pub.publish(back_camera_info)
+
     def publish_camera_images_callback(self):
         image_bundle = self.spot_wrapper.spot_images.get_camera_images()
         (
@@ -320,6 +392,13 @@ class SpotROS:
         self.populate_camera_static_transforms(image_bundle.left)
         self.populate_camera_static_transforms(image_bundle.right)
         self.populate_camera_static_transforms(image_bundle.back)
+
+    def publish_all_images_callback(self):
+        self.publish_camera_images_callback()
+        if self.depth_in_visual:
+            self.publish_depth_in_visual_images_callback()
+        else:
+            self.publish_depth_images_callback()
 
     def HandImageCB(self, results):
         """Callback for when the Spot Wrapper gets new hand image data.
@@ -1633,11 +1712,20 @@ class SpotROS:
         self.hand_depth_in_hand_color_pub = rospy.Publisher(
             "depth/hand/depth_in_color", Image, queue_size=10
         )
+        self.back_depth_in_visual_pub = rospy.Publisher(
+            "depth/back/depth_in_visual", Image, queue_size=10
+        )
         self.frontleft_depth_in_visual_pub = rospy.Publisher(
             "depth/frontleft/depth_in_visual", Image, queue_size=10
         )
         self.frontright_depth_in_visual_pub = rospy.Publisher(
             "depth/frontright/depth_in_visual", Image, queue_size=10
+        )
+        self.left_depth_in_visual_pub = rospy.Publisher(
+            "depth/left/depth_in_visual", Image, queue_size=10
+        )
+        self.right_depth_in_visual_pub = rospy.Publisher(
+            "depth/right/depth_in_visual", Image, queue_size=10
         )
 
         # EAP Pointcloud #
@@ -1695,6 +1783,15 @@ class SpotROS:
         )
         self.frontright_depth_in_visual_info_pub = rospy.Publisher(
             "depth/frontright/depth_in_visual/camera_info", CameraInfo, queue_size=10
+        )
+        self.left_depth_in_visual_info_pub = rospy.Publisher(
+            "depth/left/depth_in_visual/camera_info", CameraInfo, queue_size=10
+        )
+        self.right_depth_in_visual_info_pub = rospy.Publisher(
+            "depth/right/depth_in_visual/camera_info", CameraInfo, queue_size=10
+        )
+        self.back_depth_in_visual_info_pub = rospy.Publisher(
+            "depth/back/depth_in_visual/camera_info", CameraInfo, queue_size=10
         )
 
         # World Objects publishers #
@@ -1955,15 +2052,16 @@ class SpotROS:
             self.publish_mobility_params, self.rates["mobility_params"]
         )
         rate_limited_motion_allowed = RateLimitedCall(self.publish_allow_motion, 10)
-        rate_publish_images = RateLimitedCall(
-            self.publish_camera_images_callback,
+        rate_publish_camera_images = RateLimitedCall(
+            self.publish_all_images_callback,
             max(0.0, self.rates.get("camera_images", 10)),
         )
+
         rospy.loginfo("Driver started")
         while not rospy.is_shutdown():
             self.spot_wrapper.updateTasks()
             rate_limited_feedback()
             rate_limited_mobility_params()
             rate_limited_motion_allowed()
-            rate_publish_images()
+            rate_publish_camera_images()
             rate.sleep()
