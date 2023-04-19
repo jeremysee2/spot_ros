@@ -31,7 +31,7 @@ jobs:
       - name: Checkout Spot Wrapper
         uses: actions/checkout@v3
         with:
-          repository: jeremysee2/spot_wrapper
+          repository: jeremysee2/spot_wrapper #TODO: Change to bdaiinstitute once merged
           path: catkin_ws/src/spot_ros/spot_wrapper
 
       # Install the required packages
